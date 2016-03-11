@@ -1,4 +1,4 @@
-# madblocks
+# Madblocks
 
 Story:  [TO DO / COMPLETE]
 
@@ -32,4 +32,4 @@ Map editor :
 
 Later, an editor of map will allow you to create new maps to share it with your friends or try the level of someone !
 
-Have fun on [FIND A NAME]
+Have fun on Madblocks
