@@ -30,6 +30,6 @@ Pressure plate : When something is on this block, it will engage a mechanism. Th
 
 Map editor :
 
-Later, an editor of map will allow you to create new maps to share it with your friends or try the level of someone !
+The game has a map editor which allows you to create new maps to share it with your friends or try the level of someone ! You can save your creation and open them when you want and try them to see if it's okay.
 
-Have fun on Madblocks
+Have fun on Madblocks !
