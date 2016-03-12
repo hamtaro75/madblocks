@@ -2,22 +2,22 @@
 
 About Madblocks :
 
-Madblocks is a reflexion game made in 2D where you will have to overcome logical puzzles and stuff. 
+Madblocks is a 2D top view game reflexion where you will have to overcome logical puzzles and stuff. 
 The game is developped in C language using SDL2.
 
 Story : 
 
-You're a young magician woved to be promoted concillor of the king. But even after many years of determined works in the (arcanic) textbooks, you still have a quest, an initiatory way to accomplish to reveal yourself entirely. You have to penetrate the mind and soul of your master, Dunkha, to learn an unexpected power. You sense a tragic end but nothing will have prepared you for what awaits you in the deep complexities of a person, your master, your friend.
+You're a young magician destined to be promoted councillor of the King. But even after many years of determined work in the textbooks, you still have a quest, an initiatory way you must accomplish to reveal your true self. You have to penetrate the mind and soul of your master, Dunkha, to learn an unexpected power. You sense a tragic end but nothing will have prepared you for what awaits you in the deep complexities of a person, your master, your friend.
 
-Madblocks will immerse you in a a dark universe where thoughts will be your only weapon. Will you succeed to foil the traps of mind to reach the strength and the foresight necessary to your future grade? Or will you lose yourself forever in the interior meanderings, tormented by the past choices of your mentor? 
+Madblocks will immerse you in a a dark universe where thoughts will be your only weapon. Will you succeed in foiling the traps of mind to reach the strength and the foresight necessary to your future rank? Or will you lose yourself forever in the interior meanderings, tormented by the past choices of your mentor? 
 
 Controls :
 
-You can use arrows to move in the four directions. Your characters will move one square in the asked direction if he has the possibility.
+You can use arrows to move in the four direction. Your character will move one square in the direction asked if he has the possibility.
 
 Goals :
 
-The goal is to pass each stage. On each stage, many obstacles will be present such as movables blocks, traps, teleporters and so many others surprises that you will discover in game !  Lots of thoughts will be needed to finish each stage !
+The goal is to pass each stage. On each stage, many obstacles will be present such as movable blocks, traps, teleporters and so many others surprises that you will discover in game !  Lots of thoughts will be needed to finish each stage !
 
 Here's a descriptions of the main blocks :
 
@@ -33,6 +33,6 @@ Pressure plate : When something is on this block, it will engage a mechanism. Th
 
 Map editor :
 
-The game has a map editor which allows you to create new maps to share it with your friends or try someone's level ! You can save your creations and open them when you want and try them to see if it's okay.
+The game has a map editor which allows you to create new maps to share with your friends or try someone's level ! You can save your creations and open them when you want and try them to see if it's okay.
 
 Have fun on Madblocks !
