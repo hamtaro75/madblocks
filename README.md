@@ -6,6 +6,7 @@ Madblocks is a reflexion game made in 2D where you will have to overcome logical
 The game is developped in C language using SDL2.
 
 Story : 
+
 You're a young magician woved to be promoted concillor of the king. But even after many years of determined works in the (arcanic) textbooks, you still have a quest, an initiatory way to accomplish to reveal yourself entirely. You have to penetrate the mind and soul of your master, Dunkha, to learn an unexpected power. You sense a tragic end but nothing will have prepared you for what awaits you in the deep complexities of a person, your master, your friend.
 
 Madblocks will immerse you in a a dark universe where thoughts will be your only weapon. Will you succeed to foil the traps of mind to reach the strength and the foresight necessary to your future grade? Or will you lose yourself forever in the interior meanderings, tormented by the past choices of your mentor? 
