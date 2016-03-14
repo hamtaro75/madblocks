@@ -19,7 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="InitSDL.cpp" />
     <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="header.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BDA33FC1-4342-4504-97BA-6AE7DABEF226}</ProjectGuid>
@@ -124,8 +128,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Users\March\Desktop\madblocks\madblocks\Madblocks\SDL2-2.0.4\lib\x64;C:\Users\March\Desktop\madblocks\madblocks\Madblocks\SDL2_ttf-2.0.14\lib\x64;C:\Users\March\Desktop\madblocks\madblocks\Madblocks\SDL2_mixer-2.0.1\lib\x64;C:\Users\March\Desktop\madblocks\madblocks\Madblocks\SDL2_image-2.0.1\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
