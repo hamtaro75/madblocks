@@ -5,6 +5,9 @@
 #define BACKGROUND 1
 #define MIDGROUND 2
 #define FOREGROUND 3
+#define MIN_CHOICE_MENU 0
+#define MAX_CHOICE_MENU 3
+#define SELECT_MENU(x, y) x == y ? 255 : 0 
 #define UP 0
 #define RIGHT 1
 #define DOWN 2
@@ -15,6 +18,7 @@
 #include <SDL_image.h>
 #include <stdio.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 #include <string.h>
 #include "header.h"
 
@@ -48,6 +52,7 @@ typedef struct {
 	int right;
 	int up;
 	int down;
+	int enter;
 } Inputs;
 
 typedef struct {
@@ -56,6 +61,13 @@ typedef struct {
 	Mix_Chunk *moveBlock;
 } Sounds;
 
+typedef struct {
+	int isOnMenu;
+	TTF_Font *fontMenu;
+	int choiceMenu;
+} infosGame;
+
+infosGame infoGame;
 Sounds sound;
 
 
@@ -65,6 +77,14 @@ Mix_Music *getMusic() {
 
 Sounds getSound() {
 	return sound;
+}
+
+infosGame getInfoGame() {
+	return infoGame;
+}
+
+int isOnMenu() {
+	return infoGame.isOnMenu;
 }
 
 void getKey(Inputs *input)
@@ -83,6 +103,8 @@ void getKey(Inputs *input)
 				input->up = 1;
 			else if (event.key.keysym.sym == SDLK_DOWN)
 				input->down = 1;
+			else if (event.key.keysym.sym == SDLK_RETURN)
+				input->enter = 1;
 			else if (event.key.keysym.sym == SDLK_ESCAPE)
 				exit(0);
 		}
@@ -247,6 +269,59 @@ void drawGame(Map *map) {
 	SDL_Delay(1);
 }
 
+void writeString(char *str, int posX, int posY, int red, int green, int blue, int alpha) {
+	SDL_Rect dest;
+	SDL_Surface *surface; // To write text
+	SDL_Texture *texture; // To convert the surface to texture
+	SDL_Color textColor;
+
+	textColor.r = red;
+	textColor.g = green;
+	textColor.b = blue;
+	textColor.a = alpha;
+
+	// create surface
+	surface = TTF_RenderUTF8_Blended(infoGame.fontMenu, str, textColor);
+
+	if (surface != NULL)
+	{
+		// Convert surface to texture
+		texture = SDL_CreateTextureFromSurface(getRenderer(), surface);
+		SDL_FreeSurface(surface);
+		surface = NULL;
+
+		dest.x = posX;
+		dest.y = posY;
+
+		SDL_QueryTexture(texture, NULL, NULL, &dest.w, &dest.h);
+		SDL_RenderCopy(getRenderer(), texture, NULL, &dest);
+
+		SDL_DestroyTexture(texture);
+
+	}
+	else
+	{
+		printf("Error on writint text : %s\n", TTF_GetError());
+	}
+}
+
+void drawMenu(Map *menu) {
+	drawMap(MIDGROUND, menu);
+
+	int c0 = SELECT_MENU(infoGame.choiceMenu, 0);
+	int c1 = SELECT_MENU(infoGame.choiceMenu, 1);
+	int c2 = SELECT_MENU(infoGame.choiceMenu, 2);
+	int c3 = SELECT_MENU(infoGame.choiceMenu, 3);
+
+	writeString("Start game", TILE_SIZE * 4 + TILE_SIZE / 2, 3 * TILE_SIZE + TILE_SIZE / 4, 255, c0, c0, 0);
+	writeString("Edit map", TILE_SIZE * 4 + TILE_SIZE / 2, 5 * TILE_SIZE + TILE_SIZE / 4, 255, c1, c1, 0);
+	writeString("Option", TILE_SIZE * 4 + TILE_SIZE / 2, 7 * TILE_SIZE + TILE_SIZE / 4, 255, c2, c2, 0);
+	writeString("Exit", TILE_SIZE * 4 + TILE_SIZE / 2, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
+
+	SDL_RenderPresent(getRenderer());
+	SDL_Delay(1);
+}
+
 void checkBoxMove(Map *map) {
 	int *actualBlock = &map->mapMiddle[map->character.posY][map->character.posX];
 
@@ -391,11 +466,54 @@ void loadSounds() {
 		printf("Can't read sound openDoor : %s", Mix_GetError());
 }
 
+void loadFont(char *name, int size) {
+	infoGame.fontMenu = TTF_OpenFont(name, size);
+
+	if (infoGame.fontMenu == NULL)
+	{
+		printf("Failed to open Font %s: %s\n", name, TTF_GetError());
+	}
+}
+
+void initInfoGame() {
+	infoGame.isOnMenu = 1;
+	loadFont("font/GenBasB.ttf", 32);
+	infoGame.choiceMenu = 0;
+	
+}
+
+void updateMenu(Inputs *input) {
+	if (input->up && infoGame.choiceMenu != MIN_CHOICE_MENU)	{
+		--infoGame.choiceMenu;
+		input->up = 0;
+
+	}
+	else if (input->down && infoGame.choiceMenu != MAX_CHOICE_MENU) {
+		++infoGame.choiceMenu;
+		input->down = 0;
+	}
+	else if (input->enter && infoGame.choiceMenu == 0) {
+		infoGame.isOnMenu = 0;
+	}
+}
+
+void resetInputs(Inputs *input) {
+	input->up = 0;
+	input->right = 0;
+	input->down = 0;
+	input->left = 0;
+	input->enter = 0;
+}
+
 int	main(int ac, char **av) {
 	Map *map;
+	Map *menu;
 	Inputs input;
 
 	initSDL();
+	initInfoGame();
+	resetInputs(&input);
+	menu = loadMap("maps/menu.txt");
 	map = loadMap("maps/real.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
@@ -403,8 +521,14 @@ int	main(int ac, char **av) {
 	while (1)
 	{
 		getKey(&input);
-		updateGame(&input, map);
-		drawGame(map);
+		if (!isOnMenu()) {
+			updateGame(&input, map);
+			drawGame(map);
+		}
+		else {
+			updateMenu(&input);
+			drawMenu(menu);
+		}
 	}
 
 	return 0;

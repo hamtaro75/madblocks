@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 #include <stdio.h>
 
 SDL_Renderer *renderer;
@@ -29,11 +30,20 @@ void initSDLMixer() {
 	Mix_AllocateChannels(32);
 }
 
+void initSDLTTF() {
+	if (TTF_Init() < 0)
+	{
+		printf("Failed init SDL TTF: %s\n", TTF_GetError());
+		exit(1);
+	}
+}
+
 void initSDL()
 {
 	window = SDL_CreateWindow("Madblocks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 768, 768, SDL_WINDOW_RESIZABLE);
 
 	initSDLMixer();
+	initSDLTTF();
 
 	printf("volue ==> %d\n", Mix_VolumeMusic(16));
 	printf("volue channel ==> %d\n", Mix_Volume(-1, -1));
