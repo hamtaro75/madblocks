@@ -50,8 +50,21 @@ typedef struct {
 	int down;
 } Inputs;
 
+typedef struct {
+	Mix_Chunk *getKey;
+	Mix_Chunk *openDoor;
+	Mix_Chunk *moveBlock;
+} Sounds;
+
+Sounds sound;
+
+
 Mix_Music *getMusic() {
 	return music;
+}
+
+Sounds getSound() {
+	return sound;
 }
 
 void getKey(Inputs *input)
@@ -246,6 +259,8 @@ void checkBoxMove(Map *map) {
 		else {
 			map->mapMiddle[map->character.posY][map->character.posX + 1] = 2;
 			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == LEFT) {
@@ -257,6 +272,8 @@ void checkBoxMove(Map *map) {
 		else {
 			map->mapMiddle[map->character.posY][map->character.posX - 1] = 2;
 			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == UP) {
@@ -268,6 +285,8 @@ void checkBoxMove(Map *map) {
 		else {
 			map->mapMiddle[map->character.posY - 1][map->character.posX] = 2;
 			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == DOWN) {
@@ -279,6 +298,8 @@ void checkBoxMove(Map *map) {
 		else {
 			map->mapMiddle[map->character.posY + 1][map->character.posX] = 2;
 			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+				printf("Can't play sound moveBlock");
 		}
 	}
 }
@@ -296,11 +317,16 @@ void checkCollision(Map *map) {
 		else if (map->mapMiddle[map->character.posY][map->character.posX] == 6) {
 			map->character.gotKey = 1;
 			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			if (Mix_PlayChannel(-1, sound.getKey, 0) == -1)
+				printf("Can't play sound getKey");
+			
 		}
 		// if close door & gotkey
 		else if (map->mapMiddle[map->character.posY][map->character.posX] == 4 && map->character.gotKey) {
 			map->character.gotKey = 0;
 			map->mapMiddle[map->character.posY][map->character.posX] = 5;
+			if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
+				printf("Can't play sound openDoor");
 		}
 		else {
 			map->character.posX = map->character.prevPosX;
@@ -348,9 +374,21 @@ void loadMusic(char *name) {
 	if (music == NULL)
 		fprintf(stderr, "Can't read the music \n");
 
-	// repeat music
+	// play music in repeat
 	if (Mix_PlayMusic(music, -1) == -1)
 		printf("Mix_PlayMusic: %s\n", Mix_GetError());
+}
+
+void loadSounds() {
+	sound.getKey = Mix_LoadWAV("sound/getKey.wav");
+	if (sound.getKey == NULL)
+		printf("Can't read sound getKey : %s", Mix_GetError());
+	sound.moveBlock = Mix_LoadWAV("sound/moveBlock.wav");
+	if (sound.moveBlock == NULL)
+		printf("Can't read sound moveBlock : %s", Mix_GetError());
+	sound.openDoor = Mix_LoadWAV("sound/openDoor.wav");
+	if (sound.openDoor == NULL)
+		printf("Can't read sound openDoor : %s", Mix_GetError());
 }
 
 int	main(int ac, char **av) {
@@ -360,6 +398,7 @@ int	main(int ac, char **av) {
 	initSDL();
 	map = loadMap("maps/real.txt");
 	loadMusic("sound/Caviator.mp3");
+	loadSounds();
 
 	while (1)
 	{

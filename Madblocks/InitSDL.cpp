@@ -35,6 +35,8 @@ void initSDL()
 
 	initSDLMixer();
 
+	printf("volue ==> %d\n", Mix_VolumeMusic(16));
+	printf("volue channel ==> %d\n", Mix_Volume(-1, -1));
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	
 	SDL_ShowCursor(SDL_DISABLE);
