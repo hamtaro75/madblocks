@@ -130,6 +130,13 @@ void getKey(Inputs *input)
 	}
 }
 
+void clearWindow() {
+	SDL_SetRenderDrawColor(getRenderer(), 0, 0, 0, 255);
+	SDL_RenderClear(getRenderer());
+	SDL_RenderPresent(getRenderer());
+	SDL_Delay(1);
+}
+
 SDL_Texture *loadImage(char *name)
 {
 	SDL_Surface *loadedImage = NULL;
@@ -454,17 +461,21 @@ void checkCollision(Map *map) {
 void checkInteractionPlate(Map *map) {
 	for (int x = 0; x < map->nbPlate; ++x) {
 		pressurePlate plate = map->plate[x];
-		if (map->mapMiddle[plate.srcY][plate.srcX] != 11 || (map->character.posX == plate.srcX && map->character.posY == plate.srcY)) {
+		if (map->mapMiddle[plate.srcY][plate.srcX] != 11 && map->mapMiddle[plate.srcY][plate.srcX] != 10 || (map->character.posX == plate.srcX && map->character.posY == plate.srcY)) {
 			if (!map->plate[x].isActive) {
 				if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 					printf("Can't play sound openDoor");
 				map->mapMiddle[plate.destY][plate.destX] = 5;
 			}
+			if (map->character.posX == plate.srcX && map->character.posY == plate.srcY)
+				map->mapMiddle[plate.srcY][plate.srcX] = 11;
+
 			map->plate[x].isActive = 1;
 		}
 		else {
 			map->plate[x].isActive = 0;
 			map->mapMiddle[plate.destY][plate.destX] = 4;
+			map->mapMiddle[plate.srcY][plate.srcX] = 11;
 		}
 	}
 }
@@ -490,9 +501,10 @@ void updateGame(Inputs *input, Map *map) {
 	}
 	else if (input->escape)
 		infoGame.isOnMenu = 2;
-
 	checkCollision(map);
+	//printf("map ==> %d\n", map->mapMiddle[5][9]);
 	checkInteractionPlate(map);
+	//printf("MAP ==> %d\n", map->mapMiddle[5][9]);
 }
 
 void loadMusic(char *name) {
@@ -550,7 +562,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/pressurePlate.txt");
+			*map = loadMap("maps/Level1.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -581,7 +593,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/pressurePlate.txt");
+			*map = loadMap("maps/Level1.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -640,7 +652,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/pressurePlate.txt");
+	map = loadMap("maps/Level1.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
@@ -650,15 +662,24 @@ int	main(int ac, char **av) {
 		getKey(&input);
 		if (!isOnMenu()) {
 			updateGame(&input, map);
-			drawGame(map);
+			if (isOnMenu() != 0)
+				clearWindow();
+			else
+				drawGame(map);
 		}
 		else if (isOnMenu() == 1) {
 			updateMenu(&input, &map);
-			drawMenu(menu);
+			if (isOnMenu() != 1)
+				clearWindow();
+			else
+				drawMenu(menu);
 		}
 		else if (isOnMenu() == 2) {
 			updatePause(&input, &map);
-			drawPause(map);
+			if (isOnMenu() != 2)
+				clearWindow();
+			else
+				drawPause(map);
 		}
 		else {
 			updateEditor(&input);
