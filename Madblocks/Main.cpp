@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TILE_SIZE 64
+#define NB_TILE 12
 #define MAX_SIZE_X 200
 #define MAX_SIZE_Y 200
 #define BACKGROUND 1
@@ -7,6 +8,8 @@
 #define FOREGROUND 3
 #define MIN_CHOICE_MENU 0
 #define MAX_CHOICE_MENU 3
+#define MIN_CHOICE_PAUSE 0
+#define MAX_CHOICE_PAUSE 2
 #define SELECT_MENU(x, y) x == y ? 255 : 0 
 #define UP 0
 #define RIGHT 1
@@ -25,7 +28,17 @@
 
 SDL_Renderer *getRenderer();
 Mix_Music *music;
+
 void initSDL();
+
+typedef struct {
+	int srcX;
+	int srcY;
+	int destX;
+	int destY;
+	int interaction;
+	int isActive;
+} pressurePlate;
 
 typedef struct {
 	int posX;
@@ -45,6 +58,8 @@ typedef struct {
 	int mapForeground[MAX_SIZE_Y][MAX_SIZE_X];
 	SDL_Texture *tileset;
 	Character character;
+	int nbPlate;
+	pressurePlate plate[10];
 } Map;
 
 typedef struct {
@@ -53,6 +68,7 @@ typedef struct {
 	int up;
 	int down;
 	int enter;
+	int escape;
 } Inputs;
 
 typedef struct {
@@ -65,6 +81,7 @@ typedef struct {
 	int isOnMenu;
 	TTF_Font *fontMenu;
 	int choiceMenu;
+	int choicePause;
 } infosGame;
 
 infosGame infoGame;
@@ -87,6 +104,8 @@ int isOnMenu() {
 	return infoGame.isOnMenu;
 }
 
+
+
 void getKey(Inputs *input)
 {
 	SDL_Event event;
@@ -106,7 +125,7 @@ void getKey(Inputs *input)
 			else if (event.key.keysym.sym == SDLK_RETURN)
 				input->enter = 1;
 			else if (event.key.keysym.sym == SDLK_ESCAPE)
-				exit(0);
+				input->escape = 1;
 		}
 	}
 }
@@ -176,14 +195,14 @@ void drawMap(int layer, Map *map) {
 		while (map->mapMiddle[y][x] > -1) {
 			// Draw background
 			int nbTile = map->mapBackground[y][x];
-			int ysource = nbTile / 9 * TILE_SIZE;
-			int xsource = nbTile % 9 * TILE_SIZE;
+			int ysource = nbTile / NB_TILE * TILE_SIZE;
+			int xsource = nbTile % NB_TILE * TILE_SIZE;
 			drawTile(map->tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 
 			// Draw midgdpiround
 			nbTile = map->mapMiddle[y][x];
-			ysource = nbTile / 9 * TILE_SIZE;
-			xsource = nbTile % 9 * TILE_SIZE;
+			ysource = nbTile / NB_TILE * TILE_SIZE;
+			xsource = nbTile % NB_TILE * TILE_SIZE;
 			drawTile(map->tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 			++x;
 		}
@@ -229,6 +248,14 @@ void loadMapBack(Map *map, FILE *file) {
 	}
 }
 
+void loadPressurePlate(Map **map, FILE *file) {
+	pressurePlate *plate = &(*map)->plate[(*map)->nbPlate];
+
+	fscanf(file, "%d %d %d %d %d", &plate->srcX, &plate->srcY, &plate->destX, &plate->destY, &plate->interaction);
+	plate->isActive = 0;
+	(*map)->nbPlate++;
+}
+
 Map *loadMap(char *nameMap) {
 	FILE *file;
 	Map *map;
@@ -245,8 +272,8 @@ Map *loadMap(char *nameMap) {
 
 		char buf[20];
 		map = (Map *)malloc(sizeof(Map));
-		map->tileset = loadImage("img/Blocks/all2.png");
-
+		map->tileset = loadImage("img/Blocks/all3.png");
+		map->nbPlate = 0;
 		do {
 			fgets(buf, 20, file);
 			if (strstr(buf, "#character"))
@@ -255,9 +282,14 @@ Map *loadMap(char *nameMap) {
 				loadMapBack(map, file);
 			else if (strstr(buf, "#midground"))
 				loadMapMid(map, file);
+			else if (strstr(buf, "#pressurePlate")) {
+				loadPressurePlate(&map, file);
+			}
 		} while (strstr(buf, "#end") == NULL);
+		// have to make a function check pressureplate here
+		fclose(file);
+		printf("finish read\n");
 	}
-	printf("finish read\n");
 	return map;
 }
 
@@ -317,72 +349,81 @@ void drawMenu(Map *menu) {
 	writeString("Edit map", TILE_SIZE * 4 + TILE_SIZE / 2, 5 * TILE_SIZE + TILE_SIZE / 4, 255, c1, c1, 0);
 	writeString("Option", TILE_SIZE * 4 + TILE_SIZE / 2, 7 * TILE_SIZE + TILE_SIZE / 4, 255, c2, c2, 0);
 	writeString("Exit", TILE_SIZE * 4 + TILE_SIZE / 2, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
-
-	SDL_RenderPresent(getRenderer());
-	SDL_Delay(1);
 }
 
 void checkBoxMove(Map *map) {
 	int *actualBlock = &map->mapMiddle[map->character.posY][map->character.posX];
 
 	if (map->character.direction == RIGHT) {
-		if (map->mapMiddle[map->character.posY][map->character.posX + 1] != 1 &&
-			map->mapMiddle[map->character.posY][map->character.posX + 1] != 5) {
+		if (map->mapMiddle[map->character.posY][map->character.posX + 1] != 10 &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != 5 &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != 11) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
 			map->mapMiddle[map->character.posY][map->character.posX + 1] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
 				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == LEFT) {
-		if (map->mapMiddle[map->character.posY][map->character.posX - 1] != 1 &&
-			map->mapMiddle[map->character.posY][map->character.posX - 1] != 5) {
+		if (map->mapMiddle[map->character.posY][map->character.posX - 1] != 10 &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != 5 &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != 11) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
 			map->mapMiddle[map->character.posY][map->character.posX - 1] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
 				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == UP) {
-		if (map->mapMiddle[map->character.posY - 1][map->character.posX] != 1 &&
-			map->mapMiddle[map->character.posY - 1][map->character.posX] != 5) {
+		if (map->mapMiddle[map->character.posY - 1][map->character.posX] != 10 &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != 5 &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != 11) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
 			map->mapMiddle[map->character.posY - 1][map->character.posX] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
 				printf("Can't play sound moveBlock");
 		}
 	}
 	else if (map->character.direction == DOWN) {
-		if (map->mapMiddle[map->character.posY + 1][map->character.posX] != 1 &&
-			map->mapMiddle[map->character.posY + 1][map->character.posX] != 5) {
+		if (map->mapMiddle[map->character.posY + 1][map->character.posX] != 10 &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != 5 &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != 11) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
 			map->mapMiddle[map->character.posY + 1][map->character.posX] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
 				printf("Can't play sound moveBlock");
 		}
 	}
 }
 
+pressurePlate getPressurePlate(Map *map, int srcX, int srcY) {
+	for (int x = 0; x < 10; x++) {
+		if (map->plate[x].srcX == srcX && map->plate[x].srcY == srcY)
+			return map->plate[x];
+	}
+}
+
 void checkCollision(Map *map) {
-	// if different from floor or open door
-	if (map->mapMiddle[map->character.posY][map->character.posX] != 1 &&
-		map->mapMiddle[map->character.posY][map->character.posX] != 5)
+	// if different from floor or open door or pressure plate
+	if (map->mapMiddle[map->character.posY][map->character.posX] != 10 &&
+		map->mapMiddle[map->character.posY][map->character.posX] != 5 &&
+		map->mapMiddle[map->character.posY][map->character.posX] != 11)
 	{
 		// if a box
 		if (map->mapMiddle[map->character.posY][map->character.posX] == 2) {
@@ -391,7 +432,7 @@ void checkCollision(Map *map) {
 		// if a key
 		else if (map->mapMiddle[map->character.posY][map->character.posX] == 6) {
 			map->character.gotKey = 1;
-			map->mapMiddle[map->character.posY][map->character.posX] = 1;
+			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.getKey, 0) == -1)
 				printf("Can't play sound getKey");
 			
@@ -410,31 +451,48 @@ void checkCollision(Map *map) {
 	}
 }
 
+void checkInteractionPlate(Map *map) {
+	for (int x = 0; x < map->nbPlate; ++x) {
+		pressurePlate plate = map->plate[x];
+		if (map->mapMiddle[plate.srcY][plate.srcX] != 11 || (map->character.posX == plate.srcX && map->character.posY == plate.srcY)) {
+			if (!map->plate[x].isActive) {
+				if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
+					printf("Can't play sound openDoor");
+				map->mapMiddle[plate.destY][plate.destX] = 5;
+			}
+			map->plate[x].isActive = 1;
+		}
+		else {
+			map->plate[x].isActive = 0;
+			map->mapMiddle[plate.destY][plate.destX] = 4;
+		}
+	}
+}
+
 void updateGame(Inputs *input, Map *map) {
 	map->character.prevPosX = map->character.posX;
 	map->character.prevPosY = map->character.posY;
 	if (input->left) {
-		input->left = 0;
 		map->character.posX -= 1;
 		map->character.direction = LEFT;
 	}
 	else if (input->right) {
-		input->right = 0;
 		map->character.posX += 1;
 		map->character.direction = RIGHT;
 	}
 	else if (input->up) {
-		input->up = 0;
 		map->character.posY -= 1;
 		map->character.direction = UP;
 	}
 	else if (input->down) {
-		input->down = 0;
 		map->character.posY += 1;
 		map->character.direction = DOWN;
 	}
+	else if (input->escape)
+		infoGame.isOnMenu = 2;
 
 	checkCollision(map);
+	checkInteractionPlate(map);
 }
 
 void loadMusic(char *name) {
@@ -479,21 +537,27 @@ void initInfoGame() {
 	infoGame.isOnMenu = 1;
 	loadFont("font/GenBasB.ttf", 32);
 	infoGame.choiceMenu = 0;
+	infoGame.choicePause = 0;
 	
 }
 
-void updateMenu(Inputs *input) {
+void updateMenu(Inputs *input, Map **map) {
 	if (input->up && infoGame.choiceMenu != MIN_CHOICE_MENU)	{
 		--infoGame.choiceMenu;
-		input->up = 0;
-
 	}
 	else if (input->down && infoGame.choiceMenu != MAX_CHOICE_MENU) {
 		++infoGame.choiceMenu;
-		input->down = 0;
 	}
-	else if (input->enter && infoGame.choiceMenu == 0) {
-		infoGame.isOnMenu = 0;
+	else if (input->enter) {
+		if (infoGame.choiceMenu == 0) {
+			*map = loadMap("maps/pressurePlate.txt");
+			infoGame.isOnMenu = 0;
+			infoGame.choicePause = 0;
+		}
+		else if (infoGame.choiceMenu == 1)
+			infoGame.isOnMenu = 3;
+		else if (infoGame.choiceMenu == 3)
+			exit(0);
 	}
 }
 
@@ -503,18 +567,81 @@ void resetInputs(Inputs *input) {
 	input->down = 0;
 	input->left = 0;
 	input->enter = 0;
+	input->escape = 0;
+}
+
+void updatePause(Inputs *input, Map **map) {
+	if (input->up && infoGame.choicePause != MIN_CHOICE_PAUSE)	{
+		--infoGame.choicePause;
+	}
+	else if (input->down && infoGame.choicePause != MAX_CHOICE_PAUSE) {
+		++infoGame.choicePause;
+	}
+	else if (input->enter) {
+		if (infoGame.choicePause == 0)
+			infoGame.isOnMenu = 0;
+		else if (infoGame.choicePause == 1) {
+			*map = loadMap("maps/pressurePlate.txt");
+			infoGame.isOnMenu = 0;
+			infoGame.choicePause = 0;
+		}
+		else if (infoGame.choicePause == 2) {
+			infoGame.isOnMenu = 1;
+		}
+	}
+}
+
+void drawPause(Map *map) {
+	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+
+	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+
+	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+
+	int c0 = SELECT_MENU(infoGame.choicePause, 0);
+	int c1 = SELECT_MENU(infoGame.choicePause, 1);
+	int c2 = SELECT_MENU(infoGame.choicePause, 2);
+
+	writeString("Continue", TILE_SIZE * 5, TILE_SIZE * 3 + TILE_SIZE / 4, 255, c0, c0, 0);
+	writeString("Restart", TILE_SIZE * 5, TILE_SIZE * 5 + TILE_SIZE / 4, 255, c1, c1, 0);
+	writeString("Quit", TILE_SIZE * 5, TILE_SIZE * 7 + TILE_SIZE / 4, 255, c2, c2, 0);
+}
+
+void updateEditor(Inputs *input) {
+
+}
+
+void drawEditor(Map *editor) {
+	drawMap(BACKGROUND, editor);
 }
 
 int	main(int ac, char **av) {
 	Map *map;
 	Map *menu;
+	Map *editor;
 	Inputs input;
 
 	initSDL();
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/real.txt");
+	map = loadMap("maps/pressurePlate.txt");
+	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
 
@@ -525,10 +652,21 @@ int	main(int ac, char **av) {
 			updateGame(&input, map);
 			drawGame(map);
 		}
-		else {
-			updateMenu(&input);
+		else if (isOnMenu() == 1) {
+			updateMenu(&input, &map);
 			drawMenu(menu);
 		}
+		else if (isOnMenu() == 2) {
+			updatePause(&input, &map);
+			drawPause(map);
+		}
+		else {
+			updateEditor(&input);
+			drawEditor(editor);
+		}
+		SDL_RenderPresent(getRenderer());
+		SDL_Delay(1);
+		resetInputs(&input);
 	}
 
 	return 0;
