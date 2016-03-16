@@ -192,7 +192,6 @@ void showMapConsole(Map map) {
 }
 
 void drawMap(int layer, Map *map) {
-
 	int x = 0;
 	int y = 0;
 
@@ -206,7 +205,7 @@ void drawMap(int layer, Map *map) {
 			int xsource = nbTile % NB_TILE * TILE_SIZE;
 			drawTile(map->tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 
-			// Draw midgdpiround
+			// Draw midgdround
 			nbTile = map->mapMiddle[y][x];
 			ysource = nbTile / NB_TILE * TILE_SIZE;
 			xsource = nbTile % NB_TILE * TILE_SIZE;
@@ -218,13 +217,13 @@ void drawMap(int layer, Map *map) {
 }
 
 void drawCharacter(Map *map) {
-	drawTile(map->character.tileset, map->character.posX * TILE_SIZE, map->character.posY * TILE_SIZE, 0, 0);
+	drawTile(map->character.tileset, map->character.posX * TILE_SIZE, map->character.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
 }
 
 void loadCharacter(Map *map, FILE *file) {
-	map->character.tileset = loadImage("img/Magician/toto.png");
+	map->character.tileset = loadImage("img/Magician/dm.png");
 	map->character.gotKey = 0;
-	fscanf(file, "%d %d", &map->character.posX, &map->character.posY);
+	fscanf(file, "%d %d %d", &map->character.posX, &map->character.posY, &map->character.direction);
 }
 
 void loadMapMid(Map *map, FILE *file) {

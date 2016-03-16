@@ -1,5 +1,5 @@
 #character
-1 1
+1 1 1
 #pressurePlate
 10 1 9 10 0
 #pressurePlate
