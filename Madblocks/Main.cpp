@@ -17,7 +17,8 @@
 #define LEFT 3
 #define OPEN_DOOR 5
 #define KEY 6
-#define TELEPORTER 7
+#define TELEPORTER_TWO_WAY 7
+#define TELEPORTER_ONE_WAY 9
 #define NOTHING 10
 #define PRESSURE_PLATE_UP 11
 #define PRESSURE_PLATE_DOWN 12
@@ -380,9 +381,7 @@ void writeString(char *str, int posX, int posY, int red, int green, int blue, in
 
 	}
 	else
-	{
 		printf("Error on writint text : %s\n", TTF_GetError());
-	}
 }
 
 void drawMenu(Map *menu) {
@@ -543,7 +542,7 @@ void checkCollision(Map *map) {
 			if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
-		else if (map->mapMiddle[map->character.posY][map->character.posX] == TELEPORTER) {
+		else if (map->mapMiddle[map->character.posY][map->character.posX] == TELEPORTER_TWO_WAY || map->mapMiddle[map->character.posY][map->character.posX] == TELEPORTER_ONE_WAY) {
 			s_teleporter t = getTeleporter(map, map->character.posX, map->character.posY);
 			if (t.isEntry1 && !map->character.hasJustEnterTP) {
 				map->character.posX = t.entryX2;
@@ -685,7 +684,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/Level1.txt");
+			*map = loadMap("maps/testTeleporterOneWay.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -722,7 +721,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/Level1.txt");
+			*map = loadMap("maps/testTeleporterOneWay.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -783,7 +782,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/Level1.txt");
+	map = loadMap("maps/testTeleporterOneWay.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
