@@ -15,6 +15,8 @@
 #define RIGHT 1
 #define DOWN 2
 #define LEFT 3
+#define TELEPORTER 7
+#define NB_MAX_TELEPORTER 10
 #include <SDL.h>
 #include <stdlib.h>
 #include <sys\types.h>
@@ -41,12 +43,22 @@ typedef struct {
 } pressurePlate;
 
 typedef struct {
+	int entryX1;
+	int entryY1;
+	int entryX2;
+	int entryY2;
+	int isTwoWay;
+	int isEntry1; // to know if the player enter in entry 1 or not
+} s_teleporter;
+
+typedef struct {
 	int posX;
 	int posY;
 	int prevPosX;
 	int prevPosY;
 	int direction;
 	int gotKey;
+	int hasJustEnterTP; // to don't loop on teleporter if it's two way
 	SDL_Texture *tileset;
 } Character;
 
@@ -60,6 +72,8 @@ typedef struct {
 	Character character;
 	int nbPlate;
 	pressurePlate plate[10];
+	int nbTeleporter;
+	s_teleporter teleporter[10];
 } Map;
 
 typedef struct {
@@ -216,6 +230,13 @@ void drawMap(int layer, Map *map) {
 	}
 }
 
+int hasCharacterMoved(Character c) {
+	if (c.prevPosX == c.posX && c.prevPosY == c.posY)
+		return 1;
+	else
+		return 0;
+}
+
 void drawCharacter(Map *map) {
 	drawTile(map->character.tileset, map->character.posX * TILE_SIZE, map->character.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
 }
@@ -224,6 +245,7 @@ void loadCharacter(Map *map, FILE *file) {
 	map->character.tileset = loadImage("img/Magician/dm.png");
 	map->character.gotKey = 0;
 	fscanf(file, "%d %d %d", &map->character.posX, &map->character.posY, &map->character.direction);
+	map->character.hasJustEnterTP = 0;
 }
 
 void loadMapMid(Map *map, FILE *file) {
@@ -262,6 +284,13 @@ void loadPressurePlate(Map **map, FILE *file) {
 	(*map)->nbPlate++;
 }
 
+void loadTeleporter(Map **map, FILE *file) {
+	s_teleporter *t = &(*map)->teleporter[(*map)->nbTeleporter];
+
+	fscanf(file, "%d %d %d %d %d", &t->entryX1, &t->entryY1, &t->entryX2, &t->entryY2, &t->isTwoWay);
+	(*map)->nbTeleporter++;
+}
+
 Map *loadMap(char *nameMap) {
 	FILE *file;
 	Map *map;
@@ -280,6 +309,7 @@ Map *loadMap(char *nameMap) {
 		map = (Map *)malloc(sizeof(Map));
 		map->tileset = loadImage("img/Blocks/all3.png");
 		map->nbPlate = 0;
+		map->nbTeleporter = 0;
 		do {
 			fgets(buf, 20, file);
 			if (strstr(buf, "#character"))
@@ -290,6 +320,9 @@ Map *loadMap(char *nameMap) {
 				loadMapMid(map, file);
 			else if (strstr(buf, "#pressurePlate")) {
 				loadPressurePlate(&map, file);
+			}
+			else if (strstr(buf, "#teleporter")) {
+				loadTeleporter(&map, file);
 			}
 		} while (strstr(buf, "#end") == NULL);
 		// have to make a function check pressureplate here
@@ -425,6 +458,20 @@ pressurePlate getPressurePlate(Map *map, int srcX, int srcY) {
 	}
 }
 
+s_teleporter getTeleporter(Map *map, int posX, int posY) {
+	for (int x = 0; x < NB_MAX_TELEPORTER; x++) {
+		if (map->teleporter[x].entryX1 == posX && map->teleporter[x].entryY1 == posY) {
+			map->teleporter[x].isEntry1 = 1;
+			return map->teleporter[x];
+		}
+		else if (map->teleporter[x].entryX2 == posX && map->teleporter[x].entryY2 == posY) {
+			map->teleporter[x].isEntry1 = 0;
+			return map->teleporter[x];
+		}
+			
+	}
+}
+
 void checkCollision(Map *map) {
 	// if different from floor or open door or pressure plate
 	if (map->mapMiddle[map->character.posY][map->character.posX] != 10 &&
@@ -440,8 +487,7 @@ void checkCollision(Map *map) {
 			map->character.gotKey = 1;
 			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.getKey, 0) == -1)
-				printf("Can't play sound getKey");
-			
+				printf("Can't play sound getKey");	
 		}
 		// if close door & gotkey
 		else if (map->mapMiddle[map->character.posY][map->character.posX] == 4 && map->character.gotKey) {
@@ -449,6 +495,19 @@ void checkCollision(Map *map) {
 			map->mapMiddle[map->character.posY][map->character.posX] = 5;
 			if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 				printf("Can't play sound openDoor");
+		}
+		else if (map->mapMiddle[map->character.posY][map->character.posX] == TELEPORTER) {
+			s_teleporter t = getTeleporter(map, map->character.posX, map->character.posY);
+			if (t.isEntry1 && !map->character.hasJustEnterTP) {
+				map->character.posX = t.entryX2;
+				map->character.posY = t.entryY2;
+				map->character.hasJustEnterTP = 1;
+			} 
+			else if (t.isTwoWay && !map->character.hasJustEnterTP) {
+				map->character.posX = t.entryX1;
+				map->character.posY = t.entryY1;
+				map->character.hasJustEnterTP = 1;
+			}
 		}
 		else {
 			map->character.posX = map->character.prevPosX;
@@ -485,25 +544,27 @@ void updateGame(Inputs *input, Map *map) {
 	if (input->left) {
 		map->character.posX -= 1;
 		map->character.direction = LEFT;
+		map->character.hasJustEnterTP = 0;
 	}
 	else if (input->right) {
 		map->character.posX += 1;
 		map->character.direction = RIGHT;
+		map->character.hasJustEnterTP = 0;
 	}
 	else if (input->up) {
 		map->character.posY -= 1;
 		map->character.direction = UP;
+		map->character.hasJustEnterTP = 0;
 	}
 	else if (input->down) {
 		map->character.posY += 1;
 		map->character.direction = DOWN;
+		map->character.hasJustEnterTP = 0;
 	}
 	else if (input->escape)
 		infoGame.isOnMenu = 2;
 	checkCollision(map);
-	//printf("map ==> %d\n", map->mapMiddle[5][9]);
 	checkInteractionPlate(map);
-	//printf("MAP ==> %d\n", map->mapMiddle[5][9]);
 }
 
 void loadMusic(char *name) {
@@ -561,7 +622,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/Level1.txt");
+			*map = loadMap("maps/testTeleporter.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -592,7 +653,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/Level1.txt");
+			*map = loadMap("maps/testTeleporter.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -651,7 +712,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/Level1.txt");
+	map = loadMap("maps/testTeleporter.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
