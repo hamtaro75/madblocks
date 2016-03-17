@@ -39,6 +39,12 @@
 SDL_Renderer *getRenderer();
 Mix_Music *music;
 
+SDL_Texture *whiteSquare;
+SDL_Texture *redSquare;
+int editorPosX = 0;
+int editorPosY = 0;
+int selectedEditor = 10;
+
 void initSDL();
 
 typedef struct {
@@ -65,7 +71,7 @@ typedef struct {
 	int prevPosX;
 	int prevPosY;
 	int direction;
-	int gotKey;
+	int nbKey;
 	int hasJustEnterTP; // to don't loop on teleporter if it's two way
 	SDL_Texture *tileset;
 } Character;
@@ -91,6 +97,8 @@ typedef struct {
 	int down;
 	int enter;
 	int escape;
+	int save;
+	int erase;
 } Inputs;
 
 typedef struct {
@@ -151,6 +159,10 @@ void getKey(Inputs *input)
 				input->enter = 1;
 			else if (event.key.keysym.sym == SDLK_ESCAPE)
 				input->escape = 1;
+			else if (event.key.keysym.sym == SDLK_s)
+				input->save = 1;
+			else if (event.key.keysym.sym == SDLK_DELETE)
+				input->erase = 1;
 		}
 	}
 }
@@ -254,7 +266,7 @@ void drawCharacter(Map *map) {
 
 void loadCharacter(Map *map, FILE *file) {
 	map->character.tileset = loadImage("img/Magician/dm.png");
-	map->character.gotKey = 0;
+	map->character.nbKey = 0;
 	fscanf(file, "%d %d %d", &map->character.posX, &map->character.posY, &map->character.direction);
 	map->character.hasJustEnterTP = 0;
 }
@@ -531,14 +543,14 @@ void checkCollision(Map *map) {
 		}
 		// if a key
 		else if (map->mapMiddle[map->character.posY][map->character.posX] == 6) {
-			map->character.gotKey = 1;
+			++map->character.nbKey;
 			map->mapMiddle[map->character.posY][map->character.posX] = 10;
 			if (Mix_PlayChannel(-1, sound.getKey, 0) == -1)
 				printf("Can't play sound getKey");	
 		}
 		// if close door & gotkey
-		else if (map->mapMiddle[map->character.posY][map->character.posX] == 4 && map->character.gotKey) {
-			map->character.gotKey = 0;
+		else if (map->mapMiddle[map->character.posY][map->character.posX] == 4 && map->character.nbKey) {
+			--map->character.nbKey;
 			map->mapMiddle[map->character.posY][map->character.posX] = 5;
 			if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 				printf("Can't play sound openDoor");
@@ -692,7 +704,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/testPressurePlate.txt");
+			*map = loadMap("maps/creation0.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -712,6 +724,8 @@ void resetInputs(Inputs *input) {
 	input->left = 0;
 	input->enter = 0;
 	input->escape = 0;
+	input->save = 0;
+	input->erase = 0;
 }
 
 void updatePause(Inputs *input, Map **map) {
@@ -729,7 +743,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/testPressurePlate.txt");
+			*map = loadMap("maps/creation0.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -772,12 +786,107 @@ void drawPause(Map *map) {
 	writeString("Quit", TILE_SIZE * 5, TILE_SIZE * 7 + TILE_SIZE / 4, 255, c2, c2, 0);
 }
 
-void updateEditor(Inputs *input) {
+int checkFileExist(char *name) {
+	FILE *f;
+	f = fopen(name, "r");
+	if (f == NULL)
+		return 0;
+	fclose(f);
+	return 1;
+}
 
+void saveMap(char *fileName, Map *editor) {
+	FILE *file;
+
+	file = fopen(fileName, "w");
+	if (file == NULL)
+		printf("Error on creating the file to save\n");
+	else {
+		fprintf(file, "#character\n");
+		fprintf(file, "1 1 1\n");
+		fprintf(file, "#background\n");
+		for (int y = 0; y < 11; ++y) {
+			for (int x = 0; x < 11; ++x) {
+				fprintf(file, "%d ", editor->mapBackground[y][x]);
+			}
+			if (y < 10)
+				fprintf(file, "-1\n");
+			else
+				fprintf(file, "-2\n");
+		}
+		fprintf(file, "#midground\n");
+		for (int y = 0; y < 11; ++y) {
+			for (int x = 0; x < 11; ++x) {
+				fprintf(file, "%d ", editor->mapMiddle[y][x]);
+			}
+			if (y < 10)
+				fprintf(file, "-1\n");
+			else
+				fprintf(file, "-2\n");
+		}
+		fprintf(file, "#end");
+		fclose(file);
+	}
+}
+
+void updateEditor(Inputs *input, Map *editor) {
+	if (input->up && editorPosY > 0)
+		editorPosY--;
+	else if (input->right && editorPosX < 11)
+		editorPosX++;
+	else if (input->down && editorPosY < 11)
+		editorPosY++;
+	else if (input->left && editorPosX > 0)
+		editorPosX--;
+	else if (input->enter) {
+		if (editorPosY == 11)
+			selectedEditor = editor->mapMiddle[editorPosY][editorPosX];
+		else
+			editor->mapMiddle[editorPosY][editorPosX] = selectedEditor;
+	}
+	else if (input->save) {
+		char nbCreationFile[4];
+		int ret = 1;
+		for (int i = 0; i < 100 && ret; ++i) {
+			char *name = (char *)malloc(30);
+			strcpy(name, "maps/creation");
+			sprintf(nbCreationFile, "%d", i);
+			strcat(name, nbCreationFile);
+			strcat(name, ".txt");
+			ret = checkFileExist(name);
+			if (!ret) {
+				saveMap(name, editor);
+			}
+			free(name);
+		//	break;
+		}
+		if (ret)
+			printf("Error occured on saving map\n");
+	}
+	else if (input->erase && editorPosY != 11)
+		editor->mapMiddle[editorPosY][editorPosX] = NOTHING;
+}
+
+
+void drawForeground(Map *editor) {
+	int x = 0;
+	int y = 0;
+
+	y = 0;
+	while (y == 0 || editor->mapMiddle[y - 1][x] != -2) {
+		x = 0;
+		while (editor->mapMiddle[y][x] > -1) {
+			drawTile(whiteSquare, TILE_SIZE * x, TILE_SIZE * y, 0, 0);
+			++x;
+		}
+		++y;
+	}
 }
 
 void drawEditor(Map *editor) {
 	drawMap(BACKGROUND, editor);
+	drawForeground(editor); // temporary
+	drawTile(redSquare, TILE_SIZE * editorPosX, TILE_SIZE * editorPosY, 0, 0);
 }
 
 int	main(int ac, char **av) {
@@ -790,8 +899,10 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/testPressurePlate.txt");
+	map = loadMap("maps/creation0.txt");
 	editor = loadMap("maps/editor.txt");
+	whiteSquare = loadImage("img/Blocks/white\ square.png");
+	redSquare = loadImage("img/Blocks/red\ square.png");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
 
@@ -820,7 +931,7 @@ int	main(int ac, char **av) {
 				drawPause(map);
 		}
 		else {
-			updateEditor(&input);
+			updateEditor(&input, editor);
 			drawEditor(editor);
 		}
 		SDL_RenderPresent(getRenderer());
