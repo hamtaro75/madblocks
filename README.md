@@ -29,6 +29,8 @@ Teleporters : they come in pairs, and stepping into one takes you to the other i
 
 Key : It's an object which will open a block.
 
+![alt tag](https://github.com/hamtaro75/madblocks/blob/master/Madblocks/img/Blocks/Key.gif)
+
 Pressure plate : When something is on this block, it will engage a mechanism. This mechanism can be for example a door which will open or a block or key who appears and so on.
 
 Map editor :
