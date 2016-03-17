@@ -15,7 +15,11 @@
 #define RIGHT 1
 #define DOWN 2
 #define LEFT 3
+#define OPEN_DOOR 5
+#define KEY 6
 #define TELEPORTER 7
+#define NOTHING 10
+#define PRESSURE_PLATE 11
 #define NB_MAX_TELEPORTER 10
 #include <SDL.h>
 #include <stdlib.h>
@@ -393,63 +397,101 @@ void drawMenu(Map *menu) {
 	writeString("Exit", TILE_SIZE * 4 + TILE_SIZE / 2, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
 }
 
-void checkBoxMove(Map *map) {
-	int *actualBlock = &map->mapMiddle[map->character.posY][map->character.posX];
+// dest = give potential new pos of the key to check if the key can be at the dest pos
+int checkMoveKey(Map *map, int destX, int destY) {
+	if (map->mapMiddle[destY][destX] == NOTHING ||
+		map->mapMiddle[destY][destX] == PRESSURE_PLATE ||
+		map->mapMiddle[destY][destX] == OPEN_DOOR) {
+		map->mapMiddle[destY][destX] = KEY;
+		return 1;
+	}
+	else {
+		map->character.posX = map->character.prevPosX;
+		map->character.posY = map->character.prevPosY;
+		return 0;
+	}
+}
 
+void checkBoxMove(Map *map) {
+	int canMove = 1;
 	if (map->character.direction == RIGHT) {
-		if (map->mapMiddle[map->character.posY][map->character.posX + 1] != 10 &&
-			map->mapMiddle[map->character.posY][map->character.posX + 1] != 5 &&
-			map->mapMiddle[map->character.posY][map->character.posX + 1] != 11) {
+		if (map->mapMiddle[map->character.posY][map->character.posX + 1] != NOTHING &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != OPEN_DOOR &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
-			map->mapMiddle[map->character.posY][map->character.posX + 1] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 10;
-			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
-				printf("Can't play sound moveBlock");
+			if (map->mapMiddle[map->character.posY][map->character.posX + 1] == KEY) {
+				canMove = checkMoveKey(map, map->character.posX + 2, map->character.posY);
+			}
+			if (canMove) {
+				map->mapMiddle[map->character.posY][map->character.posX + 1] = 2;
+				map->mapMiddle[map->character.posY][map->character.posX] = 10;
+				if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+					printf("Can't play sound moveBlock");
+			}
 		}
 	}
 	else if (map->character.direction == LEFT) {
-		if (map->mapMiddle[map->character.posY][map->character.posX - 1] != 10 &&
-			map->mapMiddle[map->character.posY][map->character.posX - 1] != 5 &&
-			map->mapMiddle[map->character.posY][map->character.posX - 1] != 11) {
+		if (map->mapMiddle[map->character.posY][map->character.posX - 1] != NOTHING &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != OPEN_DOOR &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
-			map->mapMiddle[map->character.posY][map->character.posX - 1] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 10;
-			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
-				printf("Can't play sound moveBlock");
+			if (map->mapMiddle[map->character.posY][map->character.posX - 1] == KEY) {
+				canMove = checkMoveKey(map, map->character.posX - 2, map->character.posY);
+			}
+			if (canMove) {
+				map->mapMiddle[map->character.posY][map->character.posX - 1] = 2;
+				map->mapMiddle[map->character.posY][map->character.posX] = 10;
+				if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+					printf("Can't play sound moveBlock");
+			}
 		}
 	}
 	else if (map->character.direction == UP) {
-		if (map->mapMiddle[map->character.posY - 1][map->character.posX] != 10 &&
-			map->mapMiddle[map->character.posY - 1][map->character.posX] != 5 &&
-			map->mapMiddle[map->character.posY - 1][map->character.posX] != 11) {
+		if (map->mapMiddle[map->character.posY - 1][map->character.posX] != NOTHING &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != OPEN_DOOR &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
-			map->mapMiddle[map->character.posY - 1][map->character.posX] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 10;
-			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
-				printf("Can't play sound moveBlock");
+			if (map->mapMiddle[map->character.posY - 1][map->character.posX] == KEY) {
+				canMove = checkMoveKey(map, map->character.posX, map->character.posY - 2);
+			}
+			if (canMove) {
+				map->mapMiddle[map->character.posY - 1][map->character.posX] = 2;
+				map->mapMiddle[map->character.posY][map->character.posX] = 10;
+				if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+					printf("Can't play sound moveBlock");
+			}
 		}
 	}
 	else if (map->character.direction == DOWN) {
-		if (map->mapMiddle[map->character.posY + 1][map->character.posX] != 10 &&
-			map->mapMiddle[map->character.posY + 1][map->character.posX] != 5 &&
-			map->mapMiddle[map->character.posY + 1][map->character.posX] != 11) {
+		if (map->mapMiddle[map->character.posY + 1][map->character.posX] != NOTHING &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != OPEN_DOOR &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
 		}
 		else {
-			map->mapMiddle[map->character.posY + 1][map->character.posX] = 2;
-			map->mapMiddle[map->character.posY][map->character.posX] = 10;
-			if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
-				printf("Can't play sound moveBlock");
+			if (map->mapMiddle[map->character.posY + 1][map->character.posX] == KEY) {
+				canMove = checkMoveKey(map, map->character.posX, map->character.posY + 2);
+			}
+			if (canMove) {
+				map->mapMiddle[map->character.posY + 1][map->character.posX] = 2;
+				map->mapMiddle[map->character.posY][map->character.posX] = 10;
+				if (Mix_PlayChannel(-1, sound.moveBlock, 0) == -1)
+					printf("Can't play sound moveBlock");
+			}
 		}
 	}
 }
@@ -640,7 +682,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/testTeleporter.txt");
+			*map = loadMap("maps/testMoveKey.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -677,7 +719,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/testTeleporter.txt");
+			*map = loadMap("maps/testMoveKey.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -738,7 +780,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/testTeleporter.txt");
+	map = loadMap("maps/testMoveKey.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
