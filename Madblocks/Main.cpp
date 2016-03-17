@@ -11,6 +11,11 @@
 #define MIN_CHOICE_PAUSE 0
 #define MAX_CHOICE_PAUSE 2
 #define SELECT_MENU(x, y) x == y ? 255 : 0 
+#define IS_IN_GAME 0
+#define IS_IN_PRINCIPAL_MENU 1
+#define IS_IN_PAUSE_MENU 2
+#define IS_IN_OPTION_MENU 3
+#define IS_IN_CHOOSEMAP_MENU 4
 #define UP 0
 #define RIGHT 1
 #define DOWN 2
@@ -38,6 +43,9 @@
 
 
 SDL_Renderer *getRenderer();
+void getAllMapsInDirectory();
+void printAllMapsName();
+
 Mix_Music *music;
 
 SDL_Texture *whiteSquare;
@@ -117,6 +125,8 @@ typedef struct {
 	int choiceMenu;
 	int choicePause;
 	SDL_Texture *tileset;
+	int nbTotalMap;
+	char *allMapsName[100];
 } infosGame;
 
 infosGame infoGame;
@@ -684,11 +694,14 @@ void loadFont(char *name, int size) {
 }
 
 void initInfoGame() {
-	infoGame.isOnMenu = 1;
+	infoGame.isOnMenu = IS_IN_CHOOSEMAP_MENU;
 	loadFont("font/GenBasB.ttf", 32);
 	infoGame.choiceMenu = 0;
 	infoGame.choicePause = 0;
 	infoGame.tileset = loadImage("img/Blocks/all4.png");
+	infoGame.nbTotalMap = 0;
+	getAllMapsInDirectory();
+	printAllMapsName();
 	
 }
 
@@ -890,19 +903,69 @@ void drawEditor(Map *editor) {
 	drawTile(redSquare, TILE_SIZE * editorPosX, TILE_SIZE * editorPosY, 0, 0);
 }
 
-void getAllMapsInDirectory() {
-	DIR           *d;
-	struct dirent *dir;
-	d = opendir("maps/");
-	if (d)
-	{
-		while ((dir = readdir(d)) != NULL)
-		{
-			printf("%s\n", dir->d_name);
-		}
-		closedir(d);
-	}
+int isExtensionTxt(char *name) {
+	char *ext = strrchr(name, '.');
+	if (ext == NULL || strcmp(ext, ".txt") != 0)
+		return 0;
+	return 1;
+}
 
+void printAllMapsName() {
+	for (int i = 0; i < infoGame.nbTotalMap; ++i) {
+		printf("%s\n", infoGame.allMapsName[i]);
+	}
+}
+
+void getAllMapsInDirectory() {
+	DIR           *directoryMap;
+	struct dirent *dir;
+	
+	directoryMap = opendir("maps/");
+	if (directoryMap) {
+		while ((dir = readdir(directoryMap)) != NULL) {
+			if (isExtensionTxt(dir->d_name)) {
+				infoGame.allMapsName[infoGame.nbTotalMap] = (char *)malloc(30);
+				strcpy(infoGame.allMapsName[infoGame.nbTotalMap], dir->d_name);
+				infoGame.nbTotalMap++;
+			}
+		}
+		closedir(directoryMap);
+	}
+}
+
+void updateMenuChooseMap(Inputs *input, Map **map) {
+	if (input->left && infoGame.choiceMenu != 0)	{
+		--infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
+	}
+	else if (input->right && infoGame.choiceMenu != infoGame.nbTotalMap - 1) {
+		++infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
+	}
+	else if (input->enter) {
+		char *name = (char *)malloc(30);
+		strcpy(name, "maps/");
+		strcat(name, infoGame.allMapsName[infoGame.choiceMenu]);
+		*map = loadMap(name);
+		free(name),
+		infoGame.isOnMenu = IS_IN_GAME;
+		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
+			printf("Can't play sound openDoor");
+	}
+}
+
+void drawMenuChooseMap(Map *map) {
+	drawTile(infoGame.tileset, 3 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 4 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 5 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 6 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 7 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 8 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 9 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+
+	writeString(infoGame.allMapsName[infoGame.choiceMenu], TILE_SIZE * 4, TILE_SIZE * 5 + TILE_SIZE / 4, 255, 255, 255, 0);
 }
 
 int	main(int ac, char **av) {
@@ -921,30 +984,37 @@ int	main(int ac, char **av) {
 	redSquare = loadImage("img/Blocks/red\ square.png");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
-	getAllMapsInDirectory();
+
 	while (1)
 	{
 		getKey(&input);
 		if (!isOnMenu()) {
 			updateGame(&input, map);
-			if (isOnMenu() != 0)
+			if (isOnMenu() != IS_IN_GAME)
 				clearWindow();
 			else
 				drawGame(map);
 		}
-		else if (isOnMenu() == 1) {
+		else if (isOnMenu() == IS_IN_PRINCIPAL_MENU) {
 			updateMenu(&input, &map);
-			if (isOnMenu() != 1)
+			if (isOnMenu() != IS_IN_PRINCIPAL_MENU)
 				clearWindow();
 			else
 				drawMenu(menu);
 		}
-		else if (isOnMenu() == 2) {
+		else if (isOnMenu() == IS_IN_PAUSE_MENU) {
 			updatePause(&input, &map);
-			if (isOnMenu() != 2)
+			if (isOnMenu() != IS_IN_PAUSE_MENU)
 				clearWindow();
 			else
 				drawPause(map);
+		}
+		else if (isOnMenu() == IS_IN_OPTION_MENU) {
+
+		}
+		else if (isOnMenu() == IS_IN_CHOOSEMAP_MENU) {
+			updateMenuChooseMap(&input, &map);
+			drawMenuChooseMap(map);
 		}
 		else {
 			updateEditor(&input, editor);
