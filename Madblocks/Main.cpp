@@ -90,6 +90,8 @@ typedef struct {
 	Mix_Chunk *openDoor;
 	Mix_Chunk *moveBlock;
 	Mix_Chunk *teleport;
+	Mix_Chunk *menuMove;
+	Mix_Chunk *menuChoose;
 } Sounds;
 
 typedef struct {
@@ -602,15 +604,19 @@ void loadSounds() {
 	sound.teleport = Mix_LoadWAV("sound/teleport.wav");
 	if (sound.teleport == NULL)
 		printf("Can't read sound teleport : %s", Mix_GetError());
+	sound.menuMove = Mix_LoadWAV("sound/menuMove.wav");
+	if (sound.menuMove == NULL)
+		printf("Can't read sound menuMove : %s", Mix_GetError());
+	sound.menuChoose = Mix_LoadWAV("sound/menuChoose.wav");
+	if (sound.menuChoose == NULL)
+		printf("Can't read sound menuChoose : %s", Mix_GetError());
 }
 
 void loadFont(char *name, int size) {
 	infoGame.fontMenu = TTF_OpenFont(name, size);
 
 	if (infoGame.fontMenu == NULL)
-	{
 		printf("Failed to open Font %s: %s\n", name, TTF_GetError());
-	}
 }
 
 void initInfoGame() {
@@ -624,9 +630,13 @@ void initInfoGame() {
 void updateMenu(Inputs *input, Map **map) {
 	if (input->up && infoGame.choiceMenu != MIN_CHOICE_MENU)	{
 		--infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 	else if (input->down && infoGame.choiceMenu != MAX_CHOICE_MENU) {
 		++infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
@@ -638,6 +648,8 @@ void updateMenu(Inputs *input, Map **map) {
 			infoGame.isOnMenu = 3;
 		else if (infoGame.choiceMenu == 3)
 			exit(0);
+		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 }
 
@@ -653,9 +665,13 @@ void resetInputs(Inputs *input) {
 void updatePause(Inputs *input, Map **map) {
 	if (input->up && infoGame.choicePause != MIN_CHOICE_PAUSE)	{
 		--infoGame.choicePause;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 	else if (input->down && infoGame.choicePause != MAX_CHOICE_PAUSE) {
 		++infoGame.choicePause;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 	else if (input->enter) {
 		if (infoGame.choicePause == 0)
@@ -668,6 +684,8 @@ void updatePause(Inputs *input, Map **map) {
 		else if (infoGame.choicePause == 2) {
 			infoGame.isOnMenu = 1;
 		}
+		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
+			printf("Can't play sound openDoor");
 	}
 }
 
