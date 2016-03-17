@@ -33,6 +33,7 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include <string.h>
+#include <dirent.h>
 #include "header.h"
 
 
@@ -82,7 +83,7 @@ typedef struct {
 	int mapBackground[MAX_SIZE_Y][MAX_SIZE_X];
 	int mapMiddle[MAX_SIZE_Y][MAX_SIZE_X];
 	int mapForeground[MAX_SIZE_Y][MAX_SIZE_X];
-	SDL_Texture *tileset;
+//	SDL_Texture *tileset;
 	Character character;
 	int nbPlate;
 	pressurePlate plate[10];
@@ -115,6 +116,7 @@ typedef struct {
 	TTF_Font *fontMenu;
 	int choiceMenu;
 	int choicePause;
+	SDL_Texture *tileset;
 } infosGame;
 
 infosGame infoGame;
@@ -240,13 +242,13 @@ void drawMap(int layer, Map *map) {
 			int nbTile = map->mapBackground[y][x];
 			int ysource = nbTile / NB_TILE * TILE_SIZE;
 			int xsource = nbTile % NB_TILE * TILE_SIZE;
-			drawTile(map->tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
+			drawTile(infoGame.tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 
 			// Draw midgdround
 			nbTile = map->mapMiddle[y][x];
 			ysource = nbTile / NB_TILE * TILE_SIZE;
 			xsource = nbTile % NB_TILE * TILE_SIZE;
-			drawTile(map->tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
+			drawTile(infoGame.tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 			++x;
 		}
 		++y;
@@ -330,7 +332,6 @@ Map *loadMap(char *nameMap) {
 
 		char buf[20];
 		map = (Map *)malloc(sizeof(Map));
-		map->tileset = loadImage("img/Blocks/all4.png");
 		map->nbPlate = 0;
 		map->nbTeleporter = 0;
 		do {
@@ -526,8 +527,7 @@ s_teleporter getTeleporter(Map *map, int posX, int posY) {
 		else if (map->teleporter[x].entryX2 == posX && map->teleporter[x].entryY2 == posY) {
 			map->teleporter[x].isEntry1 = 0;
 			return map->teleporter[x];
-		}
-			
+		}			
 	}
 }
 
@@ -688,6 +688,7 @@ void initInfoGame() {
 	loadFont("font/GenBasB.ttf", 32);
 	infoGame.choiceMenu = 0;
 	infoGame.choicePause = 0;
+	infoGame.tileset = loadImage("img/Blocks/all4.png");
 	
 }
 
@@ -756,26 +757,26 @@ void updatePause(Inputs *input, Map **map) {
 }
 
 void drawPause(Map *map) {
-	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 3, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 3, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 3, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 3, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 3, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 3, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 4, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 5, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 6, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 7, TILE_SIZE * 3, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 8, TILE_SIZE * 3, TILE_SIZE * 0, 0);
 
-	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 5, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 5, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 5, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 5, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 5, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 3, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 4, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 5, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 6, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 7, TILE_SIZE * 5, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 8, TILE_SIZE * 5, TILE_SIZE * 0, 0);
 
-	drawTile(map->tileset, TILE_SIZE * 3, TILE_SIZE * 7, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 4, TILE_SIZE * 7, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 5, TILE_SIZE * 7, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 6, TILE_SIZE * 7, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 7, TILE_SIZE * 7, TILE_SIZE * 0, 0);
-	drawTile(map->tileset, TILE_SIZE * 8, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 3, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 4, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 5, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 6, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 7, TILE_SIZE * 7, TILE_SIZE * 0, 0);
+	drawTile(infoGame.tileset, TILE_SIZE * 8, TILE_SIZE * 7, TILE_SIZE * 0, 0);
 
 	int c0 = SELECT_MENU(infoGame.choicePause, 0);
 	int c1 = SELECT_MENU(infoGame.choicePause, 1);
@@ -889,6 +890,21 @@ void drawEditor(Map *editor) {
 	drawTile(redSquare, TILE_SIZE * editorPosX, TILE_SIZE * editorPosY, 0, 0);
 }
 
+void getAllMapsInDirectory() {
+	DIR           *d;
+	struct dirent *dir;
+	d = opendir("maps/");
+	if (d)
+	{
+		while ((dir = readdir(d)) != NULL)
+		{
+			printf("%s\n", dir->d_name);
+		}
+		closedir(d);
+	}
+
+}
+
 int	main(int ac, char **av) {
 	Map *map;
 	Map *menu;
@@ -905,7 +921,7 @@ int	main(int ac, char **av) {
 	redSquare = loadImage("img/Blocks/red\ square.png");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
-
+	getAllMapsInDirectory();
 	while (1)
 	{
 		getKey(&input);
