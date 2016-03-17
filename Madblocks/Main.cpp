@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TILE_SIZE 64
-#define NB_TILE 12
+#define NB_TILE 16
 #define MAX_SIZE_X 200
 #define MAX_SIZE_Y 200
 #define BACKGROUND 1
@@ -19,7 +19,9 @@
 #define KEY 6
 #define TELEPORTER 7
 #define NOTHING 10
-#define PRESSURE_PLATE 11
+#define PRESSURE_PLATE_UP 11
+#define PRESSURE_PLATE_DOWN 12
+#define CLOSE_DOOR_PLATE 15
 #define NB_MAX_TELEPORTER 10
 #include <SDL.h>
 #include <stdlib.h>
@@ -314,7 +316,7 @@ Map *loadMap(char *nameMap) {
 
 		char buf[20];
 		map = (Map *)malloc(sizeof(Map));
-		map->tileset = loadImage("img/Blocks/all3.png");
+		map->tileset = loadImage("img/Blocks/all4.png");
 		map->nbPlate = 0;
 		map->nbTeleporter = 0;
 		do {
@@ -400,7 +402,7 @@ void drawMenu(Map *menu) {
 // dest = give potential new pos of the key to check if the key can be at the dest pos
 int checkMoveKey(Map *map, int destX, int destY) {
 	if (map->mapMiddle[destY][destX] == NOTHING ||
-		map->mapMiddle[destY][destX] == PRESSURE_PLATE ||
+		map->mapMiddle[destY][destX] == PRESSURE_PLATE_UP ||
 		map->mapMiddle[destY][destX] == OPEN_DOOR) {
 		map->mapMiddle[destY][destX] = KEY;
 		return 1;
@@ -417,7 +419,7 @@ void checkBoxMove(Map *map) {
 	if (map->character.direction == RIGHT) {
 		if (map->mapMiddle[map->character.posY][map->character.posX + 1] != NOTHING &&
 			map->mapMiddle[map->character.posY][map->character.posX + 1] != OPEN_DOOR &&
-			map->mapMiddle[map->character.posY][map->character.posX + 1] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY][map->character.posX + 1] != PRESSURE_PLATE_UP &&
 			map->mapMiddle[map->character.posY][map->character.posX + 1] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
@@ -437,7 +439,7 @@ void checkBoxMove(Map *map) {
 	else if (map->character.direction == LEFT) {
 		if (map->mapMiddle[map->character.posY][map->character.posX - 1] != NOTHING &&
 			map->mapMiddle[map->character.posY][map->character.posX - 1] != OPEN_DOOR &&
-			map->mapMiddle[map->character.posY][map->character.posX - 1] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY][map->character.posX - 1] != PRESSURE_PLATE_UP &&
 			map->mapMiddle[map->character.posY][map->character.posX - 1] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
@@ -457,7 +459,7 @@ void checkBoxMove(Map *map) {
 	else if (map->character.direction == UP) {
 		if (map->mapMiddle[map->character.posY - 1][map->character.posX] != NOTHING &&
 			map->mapMiddle[map->character.posY - 1][map->character.posX] != OPEN_DOOR &&
-			map->mapMiddle[map->character.posY - 1][map->character.posX] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY - 1][map->character.posX] != PRESSURE_PLATE_UP &&
 			map->mapMiddle[map->character.posY - 1][map->character.posX] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
@@ -477,7 +479,7 @@ void checkBoxMove(Map *map) {
 	else if (map->character.direction == DOWN) {
 		if (map->mapMiddle[map->character.posY + 1][map->character.posX] != NOTHING &&
 			map->mapMiddle[map->character.posY + 1][map->character.posX] != OPEN_DOOR &&
-			map->mapMiddle[map->character.posY + 1][map->character.posX] != PRESSURE_PLATE &&
+			map->mapMiddle[map->character.posY + 1][map->character.posX] != PRESSURE_PLATE_UP &&
 			map->mapMiddle[map->character.posY + 1][map->character.posX] != KEY) {
 			map->character.posX = map->character.prevPosX;
 			map->character.posY = map->character.prevPosY;
@@ -568,20 +570,21 @@ void checkCollision(Map *map) {
 void checkInteractionPlate(Map *map) {
 	for (int x = 0; x < map->nbPlate; ++x) {
 		pressurePlate plate = map->plate[x];
-		if (map->mapMiddle[plate.srcY][plate.srcX] != 11 && map->mapMiddle[plate.srcY][plate.srcX] != 10 || (map->character.posX == plate.srcX && map->character.posY == plate.srcY)) {
+		if (map->mapMiddle[plate.srcY][plate.srcX] != PRESSURE_PLATE_UP && map->mapMiddle[plate.srcY][plate.srcX] != NOTHING && map->mapMiddle[plate.srcY][plate.srcX] != PRESSURE_PLATE_DOWN || (map->character.posX == plate.srcX && map->character.posY == plate.srcY)) {
 			if (!map->plate[x].isActive) {
 				if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 					printf("Can't play sound openDoor");
-				map->mapMiddle[plate.destY][plate.destX] = 5;
+				map->mapMiddle[plate.destY][plate.destX] = OPEN_DOOR;
 			}
 			if (map->character.posX == plate.srcX && map->character.posY == plate.srcY)
-				map->mapMiddle[plate.srcY][plate.srcX] = 11;
+				map->mapMiddle[plate.srcY][plate.srcX] = PRESSURE_PLATE_DOWN;
 
 			map->plate[x].isActive = 1;
 		}
 		else {
 			map->plate[x].isActive = 0;
-			map->mapMiddle[plate.destY][plate.destX] = 4;
+			map->mapMiddle[plate.destY][plate.destX] = CLOSE_DOOR_PLATE;
+			map->mapMiddle[plate.srcY][plate.srcX] = PRESSURE_PLATE_UP;
 			map->mapMiddle[plate.srcY][plate.srcX] = 11;
 		}
 	}
@@ -682,7 +685,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/testMoveKey.txt");
+			*map = loadMap("maps/Level1.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -719,7 +722,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/testMoveKey.txt");
+			*map = loadMap("maps/Level1.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -780,7 +783,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/testMoveKey.txt");
+	map = loadMap("maps/Level1.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();

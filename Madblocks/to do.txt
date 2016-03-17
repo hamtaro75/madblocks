@@ -1,0 +1,9 @@
+==> resolve bug on block passing on open door
+==> resolve bug on block dissapearing when door is closing on a block
+==> add switch (need timer)
+==> animation not move (need timer)
+==> make simple option (try to control sound)
+==> add joystick
+==> 2 players game (need to think if split screen or spelunky like) + (think if one player can play 2 character : switch between them)
+==> simple map editor
+==> scroll
