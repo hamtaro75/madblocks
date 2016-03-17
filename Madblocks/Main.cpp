@@ -89,6 +89,7 @@ typedef struct {
 	Mix_Chunk *getKey;
 	Mix_Chunk *openDoor;
 	Mix_Chunk *moveBlock;
+	Mix_Chunk *teleport;
 } Sounds;
 
 typedef struct {
@@ -502,11 +503,15 @@ void checkCollision(Map *map) {
 				map->character.posX = t.entryX2;
 				map->character.posY = t.entryY2;
 				map->character.hasJustEnterTP = 1;
+				if (Mix_PlayChannel(-1, sound.teleport, 0) == -1)
+					printf("Can't play sound openDoor");
 			} 
 			else if (t.isTwoWay && !map->character.hasJustEnterTP) {
 				map->character.posX = t.entryX1;
 				map->character.posY = t.entryY1;
 				map->character.hasJustEnterTP = 1;
+				if (Mix_PlayChannel(-1, sound.teleport, 0) == -1)
+					printf("Can't play sound openDoor");
 			}
 		}
 		else {
@@ -594,6 +599,9 @@ void loadSounds() {
 	sound.openDoor = Mix_LoadWAV("sound/openDoor.wav");
 	if (sound.openDoor == NULL)
 		printf("Can't read sound openDoor : %s", Mix_GetError());
+	sound.teleport = Mix_LoadWAV("sound/teleport.wav");
+	if (sound.teleport == NULL)
+		printf("Can't read sound teleport : %s", Mix_GetError());
 }
 
 void loadFont(char *name, int size) {
