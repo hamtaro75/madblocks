@@ -1,5 +1,5 @@
-==> resolve bug on block passing on open door
-==> resolve bug on block dissapearing when door is closing on a block
+==> resolve bug on block passing on open door and open door dissapear CHECKED
+==> resolve bug on block dissapearing when door is closing on a block CHECKED
 ==> add switch (need timer)
 ==> animation not move (need timer)
 ==> make simple option (try to control sound)

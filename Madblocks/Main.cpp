@@ -15,6 +15,7 @@
 #define RIGHT 1
 #define DOWN 2
 #define LEFT 3
+#define BLOCK 2
 #define OPEN_DOOR 5
 #define KEY 6
 #define TELEPORTER_TWO_WAY 7
@@ -573,16 +574,23 @@ void checkInteractionPlate(Map *map) {
 			if (!map->plate[x].isActive) {
 				if (Mix_PlayChannel(-1, sound.openDoor, 0) == -1)
 					printf("Can't play sound openDoor");
-				map->mapMiddle[plate.destY][plate.destX] = OPEN_DOOR;
-			}
+				if (map->mapMiddle[plate.destY][plate.destX] != BLOCK)
+					map->mapMiddle[plate.destY][plate.destX] = OPEN_DOOR;
+			}	
 			if (map->character.posX == plate.srcX && map->character.posY == plate.srcY)
 				map->mapMiddle[plate.srcY][plate.srcX] = PRESSURE_PLATE_DOWN;
+			if (map->mapMiddle[plate.destY][plate.destX] != BLOCK)
+				map->mapMiddle[plate.destY][plate.destX] = OPEN_DOOR;
+
 
 			map->plate[x].isActive = 1;
 		}
 		else {
 			map->plate[x].isActive = 0;
-			map->mapMiddle[plate.destY][plate.destX] = CLOSE_DOOR_PLATE;
+			if (map->mapMiddle[plate.destY][plate.destX] != BLOCK && (map->character.posX != plate.destX || map->character.posY != plate.destY))
+				map->mapMiddle[plate.destY][plate.destX] = CLOSE_DOOR_PLATE;
+			if (map->character.posX == plate.destX && map->character.posY == plate.destY)
+				map->mapMiddle[plate.destY][plate.destX] = OPEN_DOOR;
 			map->mapMiddle[plate.srcY][plate.srcX] = PRESSURE_PLATE_UP;
 			map->mapMiddle[plate.srcY][plate.srcX] = 11;
 		}
@@ -684,7 +692,7 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/testTeleporterOneWay.txt");
+			*map = loadMap("maps/testPressurePlate.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -721,7 +729,7 @@ void updatePause(Inputs *input, Map **map) {
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/testTeleporterOneWay.txt");
+			*map = loadMap("maps/testPressurePlate.txt");
 			infoGame.isOnMenu = 0;
 			infoGame.choicePause = 0;
 		}
@@ -782,7 +790,7 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/testTeleporterOneWay.txt");
+	map = loadMap("maps/testPressurePlate.txt");
 	editor = loadMap("maps/editor.txt");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
