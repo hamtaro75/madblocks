@@ -10,7 +10,7 @@
 
 ==> animation not move (need timer)
 
-==> make simple option (try to control sound)
+==> make simple option (try to control sound) CHECKED
 
 ==> add joystick
 
@@ -25,3 +25,9 @@
 ==> when save a new map on the editor, can choose the name of the file
 
 ==> add menu for editor
+
+==> load an existing file in editor and modify it
+
+==> make a file to register option 
+
+==> test 2D isométric

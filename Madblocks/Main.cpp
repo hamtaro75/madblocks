@@ -1030,7 +1030,17 @@ void updateOption(Inputs *input) {
 			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
-		
+	}
+	else if (input->enter) {
+		if (infoGame.choiceMenu == OPTION_CONTROLS) {
+			if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
+		else if (infoGame.choiceMenu == OPTION_RETURN) {
+			infoGame.isOnMenu = IS_IN_PRINCIPAL_MENU;
+			if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
 	}
 }
 
