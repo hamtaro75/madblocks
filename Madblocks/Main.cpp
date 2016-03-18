@@ -16,6 +16,7 @@
 #define IS_IN_PAUSE_MENU 2
 #define IS_IN_OPTION_MENU 3
 #define IS_IN_CHOOSEMAP_MENU 4
+#define IS_IN_EDITOR 5
 #define UP 0
 #define RIGHT 1
 #define DOWN 2
@@ -127,6 +128,7 @@ typedef struct {
 	SDL_Texture *tileset;
 	int nbTotalMap;
 	char *allMapsName[100];
+	int mapChoosed;
 } infosGame;
 
 infosGame infoGame;
@@ -694,7 +696,7 @@ void loadFont(char *name, int size) {
 }
 
 void initInfoGame() {
-	infoGame.isOnMenu = IS_IN_CHOOSEMAP_MENU;
+	infoGame.isOnMenu = IS_IN_PRINCIPAL_MENU;
 	loadFont("font/GenBasB.ttf", 32);
 	infoGame.choiceMenu = 0;
 	infoGame.choicePause = 0;
@@ -718,12 +720,12 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			*map = loadMap("maps/creation0.txt");
-			infoGame.isOnMenu = 0;
+			//*map = loadMap("maps/creation0.txt");
+			infoGame.isOnMenu = IS_IN_CHOOSEMAP_MENU;
 			infoGame.choicePause = 0;
 		}
 		else if (infoGame.choiceMenu == 1)
-			infoGame.isOnMenu = 3;
+			infoGame.isOnMenu = IS_IN_EDITOR;
 		else if (infoGame.choiceMenu == 3)
 			exit(0);
 		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
@@ -754,18 +756,24 @@ void updatePause(Inputs *input, Map **map) {
 			printf("Can't play sound openDoor");
 	}
 	else if (input->enter) {
+		
 		if (infoGame.choicePause == 0)
 			infoGame.isOnMenu = 0;
 		else if (infoGame.choicePause == 1) {
-			*map = loadMap("maps/creation0.txt");
+			char *name = (char *)malloc(30);
+			strcpy(name, "maps/");
+			strcat(name, infoGame.allMapsName[infoGame.mapChoosed]);
+			*map = loadMap(name);
+			free(name);
 			infoGame.isOnMenu = 0;
-			infoGame.choicePause = 0;
 		}
 		else if (infoGame.choicePause == 2) {
 			infoGame.isOnMenu = 1;
 		}
 		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
 			printf("Can't play sound openDoor");
+		infoGame.choicePause = 0;
+		infoGame.choiceMenu = 0;
 	}
 }
 
@@ -949,10 +957,12 @@ void updateMenuChooseMap(Inputs *input, Map **map) {
 		strcpy(name, "maps/");
 		strcat(name, infoGame.allMapsName[infoGame.choiceMenu]);
 		*map = loadMap(name);
-		free(name),
+		free(name);
 		infoGame.isOnMenu = IS_IN_GAME;
 		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
 			printf("Can't play sound openDoor");
+		infoGame.mapChoosed = infoGame.choiceMenu;
+		infoGame.choiceMenu = 0;
 	}
 }
 
@@ -975,10 +985,11 @@ int	main(int ac, char **av) {
 	Inputs input;
 
 	initSDL();
+	map = (Map *)malloc(sizeof(*map));
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	map = loadMap("maps/creation0.txt");
+	//map = loadMap("maps/creation0.txt");
 	editor = loadMap("maps/editor.txt");
 	whiteSquare = loadImage("img/Blocks/white\ square.png");
 	redSquare = loadImage("img/Blocks/red\ square.png");
@@ -1016,7 +1027,7 @@ int	main(int ac, char **av) {
 			updateMenuChooseMap(&input, &map);
 			drawMenuChooseMap(map);
 		}
-		else {
+		else if (isOnMenu() == IS_IN_EDITOR) {
 			updateEditor(&input, editor);
 			drawEditor(editor);
 		}
