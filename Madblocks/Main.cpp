@@ -31,6 +31,14 @@
 #define PRESSURE_PLATE_DOWN 12
 #define CLOSE_DOOR_PLATE 15
 #define NB_MAX_TELEPORTER 10
+#define MIN_VOLUME 0
+#define MAX_VOLUME 128
+#define MIN_CHOICE_OPTION 0
+#define MAX_CHOICE_OPTION 3
+#define OPTION_MUSIC 0
+#define OPTION_SOUND 1
+#define OPTION_CONTROLS 2
+#define OPTION_RETURN 3
 #include <SDL.h>
 #include <stdlib.h>
 #include <sys\types.h>
@@ -51,6 +59,7 @@ Mix_Music *music;
 
 SDL_Texture *whiteSquare;
 SDL_Texture *redSquare;
+SDL_Texture *slider;
 int editorPosX = 0;
 int editorPosY = 0;
 int selectedEditor = 10;
@@ -129,6 +138,8 @@ typedef struct {
 	int nbTotalMap;
 	char *allMapsName[100];
 	int mapChoosed;
+	int volumeMusic;
+	int volumeSound;
 } infosGame;
 
 infosGame infoGame;
@@ -702,9 +713,14 @@ void initInfoGame() {
 	infoGame.choicePause = 0;
 	infoGame.tileset = loadImage("img/Blocks/all4.png");
 	infoGame.nbTotalMap = 0;
+
+	infoGame.volumeMusic = Mix_VolumeMusic(-1);
+	infoGame.volumeSound = Mix_Volume(-1, -1);
+
 	getAllMapsInDirectory();
-	printAllMapsName();
+	//printAllMapsName();
 	
+
 }
 
 void updateMenu(Inputs *input, Map **map) {
@@ -720,12 +736,14 @@ void updateMenu(Inputs *input, Map **map) {
 	}
 	else if (input->enter) {
 		if (infoGame.choiceMenu == 0) {
-			//*map = loadMap("maps/creation0.txt");
 			infoGame.isOnMenu = IS_IN_CHOOSEMAP_MENU;
 			infoGame.choicePause = 0;
 		}
 		else if (infoGame.choiceMenu == 1)
 			infoGame.isOnMenu = IS_IN_EDITOR;
+		else if (infoGame.choiceMenu == 2) {
+			infoGame.isOnMenu = IS_IN_OPTION_MENU;
+		}
 		else if (infoGame.choiceMenu == 3)
 			exit(0);
 		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
@@ -880,7 +898,6 @@ void updateEditor(Inputs *input, Map *editor) {
 				saveMap(name, editor);
 			}
 			free(name);
-		//	break;
 		}
 		if (ret)
 			printf("Error occured on saving map\n");
@@ -978,6 +995,120 @@ void drawMenuChooseMap(Map *map) {
 	writeString(infoGame.allMapsName[infoGame.choiceMenu], TILE_SIZE * 4, TILE_SIZE * 5 + TILE_SIZE / 4, 255, 255, 255, 0);
 }
 
+void updateOption(Inputs *input) {
+	if (input->up && infoGame.choiceMenu > MIN_CHOICE_OPTION) {
+		--infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
+	}
+	else if (input->down && infoGame.choiceMenu < MAX_CHOICE_OPTION) {
+		++infoGame.choiceMenu;
+		if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+			printf("Can't play sound openDoor");
+	}
+	else if (input->right) {
+		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.volumeMusic < MAX_VOLUME) {
+			Mix_VolumeMusic(++infoGame.volumeMusic);
+			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
+		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.volumeSound < MAX_VOLUME) {
+			Mix_Volume(-1, ++infoGame.volumeSound);
+			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
+		
+	}
+	else if (input->left) {
+		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.volumeMusic > MIN_VOLUME) {
+			Mix_VolumeMusic(--infoGame.volumeMusic);
+			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
+		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.volumeSound > MIN_VOLUME) {
+			Mix_Volume(-1, --infoGame.volumeSound);
+			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
+				printf("Can't play sound openDoor");
+		}
+		
+	}
+}
+
+void drawOption(Map *map) {
+	drawTile(infoGame.tileset, 0 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 1 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 2 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 3 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 4 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 5 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 6 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 7 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 8 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 9 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 10 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 11 * TILE_SIZE, 3 * TILE_SIZE, 0, 0);
+
+	drawTile(slider, 6 * TILE_SIZE, 3 * TILE_SIZE, 0 * TILE_SIZE, 0);
+	drawTile(slider, 7 * TILE_SIZE, 3 * TILE_SIZE, 1 * TILE_SIZE, 0);
+	drawTile(slider, 8 * TILE_SIZE, 3 * TILE_SIZE, 2 * TILE_SIZE, 0);
+	drawTile(slider, 6 * TILE_SIZE + infoGame.volumeMusic + 27, 3 * TILE_SIZE, 3 * TILE_SIZE, 0);
+
+	drawTile(infoGame.tileset, 0 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 1 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 2 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 3 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 4 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 5 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 6 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 7 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 8 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 9 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 10 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 11 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+
+	drawTile(slider, 6 * TILE_SIZE, 5 * TILE_SIZE, 0 * TILE_SIZE, 0);
+	drawTile(slider, 7 * TILE_SIZE, 5 * TILE_SIZE, 1 * TILE_SIZE, 0);
+	drawTile(slider, 8 * TILE_SIZE, 5 * TILE_SIZE, 2 * TILE_SIZE, 0);
+	drawTile(slider, 6 * TILE_SIZE + infoGame.volumeSound + 27, 5 * TILE_SIZE, 3 * TILE_SIZE, 0);
+
+	drawTile(infoGame.tileset, 0 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 1 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 2 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 3 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 4 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 5 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 6 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 7 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 8 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 9 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 10 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 11 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
+
+	drawTile(infoGame.tileset, 0 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 1 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 2 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 3 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 4 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 5 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 6 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 7 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 8 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 9 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 10 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+	drawTile(infoGame.tileset, 11 * TILE_SIZE, 9 * TILE_SIZE, 0, 0);
+
+	int c0 = SELECT_MENU(infoGame.choiceMenu, 0);
+	int c1 = SELECT_MENU(infoGame.choiceMenu, 1);
+	int c2 = SELECT_MENU(infoGame.choiceMenu, 2);
+	int c3 = SELECT_MENU(infoGame.choiceMenu, 3);
+
+
+	writeString("Volume music", 0 * TILE_SIZE + TILE_SIZE / 4, 3 * TILE_SIZE + TILE_SIZE / 4, 255, c0, c0, 0);
+	writeString("Volume sound", 0 * TILE_SIZE + TILE_SIZE / 4, 5 * TILE_SIZE + TILE_SIZE / 4, 255, c1, c1, 0);
+	writeString("Controls", 0 * TILE_SIZE + TILE_SIZE / 4, 7 * TILE_SIZE + TILE_SIZE / 4, 255, c2, c2, 0);
+	writeString("Back", 0 * TILE_SIZE + TILE_SIZE / 4, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
+}
+
 int	main(int ac, char **av) {
 	Map *map;
 	Map *menu;
@@ -989,10 +1120,10 @@ int	main(int ac, char **av) {
 	initInfoGame();
 	resetInputs(&input);
 	menu = loadMap("maps/menu.txt");
-	//map = loadMap("maps/creation0.txt");
 	editor = loadMap("maps/editor.txt");
 	whiteSquare = loadImage("img/Blocks/white\ square.png");
 	redSquare = loadImage("img/Blocks/red\ square.png");
+	slider = loadImage("img/Blocks/slider.png");
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
 
@@ -1021,7 +1152,8 @@ int	main(int ac, char **av) {
 				drawPause(map);
 		}
 		else if (isOnMenu() == IS_IN_OPTION_MENU) {
-
+			updateOption(&input);
+			drawOption(map);
 		}
 		else if (isOnMenu() == IS_IN_CHOOSEMAP_MENU) {
 			updateMenuChooseMap(&input, &map);
@@ -1031,6 +1163,9 @@ int	main(int ac, char **av) {
 			updateEditor(&input, editor);
 			drawEditor(editor);
 		}
+
+		if (input.enter)
+			infoGame.choiceMenu = 0;
 		SDL_RenderPresent(getRenderer());
 		SDL_Delay(1);
 		resetInputs(&input);
