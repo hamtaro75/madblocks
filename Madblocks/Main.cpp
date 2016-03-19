@@ -11,6 +11,7 @@
 #define MIN_CHOICE_PAUSE 0
 #define MAX_CHOICE_PAUSE 2
 #define SELECT_MENU(x, y) x == y ? 255 : 0 
+#define SIZE_PATH 5
 #define IS_IN_GAME 0
 #define IS_IN_PRINCIPAL_MENU 1
 #define IS_IN_PAUSE_MENU 2
@@ -25,6 +26,7 @@
 #define OPEN_DOOR 5
 #define KEY 6
 #define TELEPORTER_TWO_WAY 7
+#define EXIT 8
 #define TELEPORTER_ONE_WAY 9
 #define NOTHING 10
 #define PRESSURE_PLATE_UP 11
@@ -118,6 +120,7 @@ typedef struct {
 	int escape;
 	int save;
 	int erase;
+	int letter;
 } Inputs;
 
 typedef struct {
@@ -140,6 +143,7 @@ typedef struct {
 	int mapChoosed;
 	int volumeMusic;
 	int volumeSound;
+	char *pathSave;
 } infosGame;
 
 infosGame infoGame;
@@ -184,8 +188,10 @@ void getKey(Inputs *input)
 				input->enter = 1;
 			else if (event.key.keysym.sym == SDLK_ESCAPE)
 				input->escape = 1;
-			else if (event.key.keysym.sym == SDLK_s)
-				input->save = 1;
+			else if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z')
+				input->letter = event.key.keysym.sym;
+		//	else if (event.key.keysym.sym == SDLK_s)
+		//		input->save = 1;
 			else if (event.key.keysym.sym == SDLK_DELETE)
 				input->erase = 1;
 		}
@@ -760,6 +766,7 @@ void resetInputs(Inputs *input) {
 	input->escape = 0;
 	input->save = 0;
 	input->erase = 0;
+	input->letter = 0;
 }
 
 void updatePause(Inputs *input, Map **map) {
@@ -869,6 +876,8 @@ void saveMap(char *fileName, Map *editor) {
 	}
 }
 
+int testSave = 0;
+
 void updateEditor(Inputs *input, Map *editor) {
 	if (input->up && editorPosY > 0)
 		editorPosY--;
@@ -879,28 +888,34 @@ void updateEditor(Inputs *input, Map *editor) {
 	else if (input->left && editorPosX > 0)
 		editorPosX--;
 	else if (input->enter) {
-		if (editorPosY == 11)
+		if (testSave) {
+			strcat(infoGame.pathSave, ".txt");
+			if (!checkFileExist(infoGame.pathSave)) {
+				saveMap(infoGame.pathSave, editor);
+				infoGame.isOnMenu = IS_IN_PRINCIPAL_MENU;
+			}
+			else
+				printf("this name already exist\n");
+			free(infoGame.pathSave);
+			testSave = 0;
+		}
+		else if (editorPosY == 11)
 			selectedEditor = editor->mapMiddle[editorPosY][editorPosX];
 		else
 			editor->mapMiddle[editorPosY][editorPosX] = selectedEditor;
 	}
-	else if (input->save) {
-		char nbCreationFile[4];
-		int ret = 1;
-		for (int i = 0; i < 100 && ret; ++i) {
-			char *name = (char *)malloc(30);
-			strcpy(name, "maps/creation");
-			sprintf(nbCreationFile, "%d", i);
-			strcat(name, nbCreationFile);
-			strcat(name, ".txt");
-			ret = checkFileExist(name);
-			if (!ret) {
-				saveMap(name, editor);
-			}
-			free(name);
+	else if (input->letter == 's' || testSave) {
+
+		if (!testSave) {
+			testSave = 1;
+			infoGame.pathSave = (char *)malloc(30);
+			strcpy(infoGame.pathSave, "maps/");
 		}
-		if (ret)
-			printf("Error occured on saving map\n");
+		else {
+			char c = input->letter;
+			char letter[2] = { c, '\0' };
+			strcat(infoGame.pathSave, letter);
+		}
 	}
 	else if (input->erase && editorPosY != 11)
 		editor->mapMiddle[editorPosY][editorPosX] = NOTHING;
@@ -923,9 +938,20 @@ void drawForeground(Map *editor) {
 }
 
 void drawEditor(Map *editor) {
+
 	drawMap(BACKGROUND, editor);
 	drawForeground(editor); // temporary
 	drawTile(redSquare, TILE_SIZE * editorPosX, TILE_SIZE * editorPosY, 0, 0);
+
+	if (testSave) {
+		for (int x = 0; x != 11; ++x)
+			drawTile(infoGame.tileset, x * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
+		if (strcmp(infoGame.pathSave, "maps/") != 0)
+			writeString(infoGame.pathSave + SIZE_PATH, TILE_SIZE / 4, TILE_SIZE * 5, 255, 255, 255, 0);
+	}
+
+	
+	
 }
 
 int isExtensionTxt(char *name) {
@@ -1171,7 +1197,10 @@ int	main(int ac, char **av) {
 		}
 		else if (isOnMenu() == IS_IN_EDITOR) {
 			updateEditor(&input, editor);
-			drawEditor(editor);
+			if (isOnMenu() != IS_IN_EDITOR)
+				clearWindow();
+			else
+				drawEditor(editor);
 		}
 
 		if (input.enter)

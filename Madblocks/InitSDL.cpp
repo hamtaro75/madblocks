@@ -45,7 +45,7 @@ void initSDL()
 	initSDLMixer();
 	initSDLTTF();
 
-	Mix_VolumeMusic(64);
+	Mix_VolumeMusic(16);
 	Mix_Volume(-1, 128);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	

@@ -1,10 +1,4 @@
-==> resolve bug on block passing on open door and open door dissapear CHECKED
-
-==> resolve bug on block dissapearing when door is closing on a block CHECKED
-
 ==> verify if there's no problem when a block is passing on a open door of a key door
-
-==> resolve bug on multiple key, if taking all key and opening a door, nox more key in inventory (need to put nbKey instead of getKey) CHECKED
 
 ==> add switch (need timer)
 
@@ -16,13 +10,11 @@
 
 ==> 2 players game (need to think if split screen or spelunky like) + (think if one player can play 2 character : switch between them)
 
-==> simple map editor CHECKED
-
 ==> scroll
 
 ==> can choose the map we want to play in game by checking all maps present in directory maps CHECKED
 
-==> when save a new map on the editor, can choose the name of the file
+==> when save a new map on the editor, can choose the name of the file CHECKED
 
 ==> add menu for editor
 
@@ -35,3 +27,9 @@
 ==> server (optionnal?)
 
 ==> add fog
+
+==> need to get all maps in directory only when enter on launch game. Have to free all and reload all if it's not the first call to the function.
+
+==> need to write if name already exist to the screen in editor
+
+==> when choosing name for the map, dissable arrow on the editor and use it for the name. + add delete during name choice.
