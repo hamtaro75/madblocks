@@ -30,4 +30,8 @@
 
 ==> make a file to register option 
 
-==> test 2D isométric
+==> test 2D isométric CHECKED ! Working (need to make a function which convert coord plate to coord windows)
+
+==> server (optionnal?)
+
+==> add fog
