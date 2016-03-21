@@ -40,7 +40,8 @@ void initSDLTTF() {
 
 void initSDL()
 {
-	window = SDL_CreateWindow("Madblocks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 768, 768, SDL_WINDOW_RESIZABLE);
+
+	window = SDL_CreateWindow("Madblocks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED | SDL_INIT_TIMER, 768, 768, NULL);
 
 	initSDLMixer();
 	initSDLTTF();
@@ -48,6 +49,8 @@ void initSDL()
 	Mix_VolumeMusic(16);
 	Mix_Volume(-1, 128);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+
+	SDL_InitSubSystem(SDL_INIT_JOYSTICK);
 	
 	SDL_ShowCursor(SDL_DISABLE);
 }

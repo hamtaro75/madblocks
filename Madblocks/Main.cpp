@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define TILE_SIZE 64
+#define SIZE_WIN_X 768
+#define SIZE_WIN_Y 768
 #define NB_TILE 16
 #define MAX_SIZE_X 200
 #define MAX_SIZE_Y 200
@@ -41,6 +43,14 @@
 #define OPTION_SOUND 1
 #define OPTION_CONTROLS 2
 #define OPTION_RETURN 3
+#define DEAD_ZONE 8000
+#define JOYSTICK_UP 0
+#define JOYSTICK_DOWN 1
+#define JOYSTICK_LEFT 2
+#define JOYSTICK_RIGHT 3
+#define JOYSTICK_START 4
+#define JOYSTICK_A 10
+
 #include <SDL.h>
 #include <stdlib.h>
 #include <sys\types.h>
@@ -52,10 +62,11 @@
 #include <dirent.h>
 #include "header.h"
 
-
 SDL_Renderer *getRenderer();
 void getAllMapsInDirectory();
 void printAllMapsName();
+void loadOption();
+void saveOption();
 
 Mix_Music *music;
 
@@ -67,6 +78,11 @@ int editorPosY = 0;
 int selectedEditor = 10;
 
 void initSDL();
+
+typedef struct{
+	int posX;
+	int posY;
+} s_camera;
 
 typedef struct {
 	int srcX;
@@ -109,6 +125,7 @@ typedef struct {
 	pressurePlate plate[10];
 	int nbTeleporter;
 	s_teleporter teleporter[10];
+	s_camera camera;
 } Map;
 
 typedef struct {
@@ -133,6 +150,12 @@ typedef struct {
 } Sounds;
 
 typedef struct {
+	Inputs controls;
+	unsigned int volumeMusic;
+	unsigned int volumeSound;
+} s_option;
+
+typedef struct {
 	int isOnMenu;
 	TTF_Font *fontMenu;
 	int choiceMenu;
@@ -141,9 +164,9 @@ typedef struct {
 	int nbTotalMap;
 	char *allMapsName[100];
 	int mapChoosed;
-	int volumeMusic;
-	int volumeSound;
 	char *pathSave;
+	SDL_Joystick *joystick;
+	s_option *option;
 } infosGame;
 
 infosGame infoGame;
@@ -166,10 +189,7 @@ int isOnMenu() {
 	return infoGame.isOnMenu;
 }
 
-
-
-void getKey(Inputs *input)
-{
+void inputKeyboard(Inputs *input) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -190,11 +210,119 @@ void getKey(Inputs *input)
 				input->escape = 1;
 			else if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z')
 				input->letter = event.key.keysym.sym;
-		//	else if (event.key.keysym.sym == SDLK_s)
-		//		input->save = 1;
+			//	else if (event.key.keysym.sym == SDLK_s)
+			//		input->save = 1;
 			else if (event.key.keysym.sym == SDLK_DELETE)
 				input->erase = 1;
 		}
+	
+	}
+}
+
+void inputJoystick(Inputs *input) {
+	SDL_Event event;
+
+
+	/*if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_UP))
+		input->up = 1;
+	else if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_RIGHT))
+		input->right = 1;
+	else if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_DOWN))
+		input->down = 1;
+	else if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_LEFT))
+		input->left = 1;
+	else if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_A))
+		input->enter = 1;
+	else if (SDL_JoystickGetButton(infoGame.joystick, JOYSTICK_START))
+		input->escape = 1;*/
+
+	while (SDL_PollEvent(&event)) {
+
+		if (event.type == SDL_QUIT)
+			exit(0);
+			
+		if (event.type == SDL_JOYBUTTONDOWN) {
+			if (event.jbutton.button == JOYSTICK_UP)
+				input->up = 1;
+			else if (event.jbutton.button == JOYSTICK_RIGHT)
+				input->right = 1;
+			else if (event.jbutton.button == JOYSTICK_DOWN)
+				input->down = 1;
+			else if (event.jbutton.button == JOYSTICK_LEFT)
+				input->left = 1;
+			else if (event.jbutton.button == JOYSTICK_A)
+				input->enter = 1;
+			else if (event.jbutton.button == JOYSTICK_START)
+				input->escape = 1;
+		}
+		else if (event.type == SDL_JOYAXISMOTION) {
+			if (event.jaxis.which == 0)
+			{
+				if (event.jaxis.axis == 0)
+				{
+					if ((event.jaxis.value > -DEAD_ZONE) && (event.jaxis.value < DEAD_ZONE))
+					{
+						input->right = 0;
+						input->left = 0;
+					}
+					else
+					{
+						if (event.jaxis.value < -DEAD_ZONE)
+						{
+							input->right = 0;
+							input->left = 1;
+						}
+						else if (event.jaxis.value > DEAD_ZONE)
+						{
+							input->right = 1;
+							input->left = 0;
+						}
+					}
+				}
+
+				else if (event.jaxis.axis == 1)
+				{
+					if ((event.jaxis.value > -DEAD_ZONE) && (event.jaxis.value < DEAD_ZONE))
+					{
+						input->up = 0;
+						input->down = 0;
+					}
+					else
+					{
+						if (event.jaxis.value < 0)
+						{
+							input->up = 1;
+							input->down = 0;
+						}
+						else
+						{
+							input->up = 0;
+							input->down = 1;
+						}
+					}
+				}
+			}
+		}
+	
+	}
+}
+
+void openJoystick(int indexJoystick) {
+	infoGame.joystick = SDL_JoystickOpen(indexJoystick);
+	if (infoGame.joystick == NULL)
+		printf("Error on opening joystick %d\n", indexJoystick);
+}
+
+void getKey(Inputs *input)
+{
+	if (infoGame.joystick != NULL) {
+		inputJoystick(input);
+		inputKeyboard(input);
+	}
+	else {
+		if (SDL_NumJoysticks() > 0)
+			openJoystick(0);
+		inputKeyboard(input);
 	}
 }
 
@@ -263,18 +391,17 @@ void drawMap(int layer, Map *map) {
 	int x = 0;
 	int y = 0;
 
-	y = 0;
-	while (y == 0 || map->mapMiddle[y - 1][x] != -2) {
+	while (y == 0 || map->mapMiddle[y - 1 + map->camera.posY][x + map->camera.posX] != -2) {
 		x = 0;
-		while (map->mapMiddle[y][x] > -1) {
+		while (map->mapMiddle[y + map->camera.posY][x + map->camera.posX] > -1) {
 			// Draw background
-			int nbTile = map->mapBackground[y][x];
+			int nbTile = map->mapBackground[y + map->camera.posY][x + map->camera.posX];
 			int ysource = nbTile / NB_TILE * TILE_SIZE;
 			int xsource = nbTile % NB_TILE * TILE_SIZE;
 			drawTile(infoGame.tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
 
 			// Draw midgdround
-			nbTile = map->mapMiddle[y][x];
+			nbTile = map->mapMiddle[y + map->camera.posY][x + map->camera.posX];
 			ysource = nbTile / NB_TILE * TILE_SIZE;
 			xsource = nbTile % NB_TILE * TILE_SIZE;
 			drawTile(infoGame.tileset, TILE_SIZE * x, TILE_SIZE * y, xsource, ysource);
@@ -292,7 +419,7 @@ int hasCharacterMoved(Character c) {
 }
 
 void drawCharacter(Map *map) {
-	drawTile(map->character.tileset, map->character.posX * TILE_SIZE, map->character.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
+	drawTile(map->character.tileset, map->character.posX * TILE_SIZE - map->camera.posX * TILE_SIZE, map->character.posY * TILE_SIZE - map->camera.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
 }
 
 void loadCharacter(Map *map, FILE *file) {
@@ -306,13 +433,18 @@ void loadMapMid(Map *map, FILE *file) {
 	int breakX = 0;
 	int breakY = 0;
 
+	map->maxX = 0;
+	map->maxY = 0;
+
 	for (int y = 0; breakY != -2; y++) {
 		breakX = 0;
 		for (int x = 0; breakX > -1; x++) {
 			fscanf(file, "%d", &map->mapMiddle[y][x]);
 			breakX = map->mapMiddle[y][x];
+			map->maxX = map->maxX > x ? map->maxX : x;
 		}
 		breakY = breakX;
+		map->maxY = y + 1; 
 	}
 }
 
@@ -638,6 +770,19 @@ void checkInteractionPlate(Map *map) {
 	}
 }
 
+void changePosCamera(Map *map) {
+	int nbBlockXdraw = SIZE_WIN_Y / TILE_SIZE;
+
+	if (map->camera.posX + nbBlockXdraw / 2 < map->character.posX && map->camera.posX + nbBlockXdraw < map->maxX)
+		++map->camera.posX;
+	if ((map->camera.posX + nbBlockXdraw / 2 > map->character.posX) && (map->camera.posX > 0))
+		--map->camera.posX;
+	if (map->camera.posY + nbBlockXdraw / 2 < map->character.posY && map->camera.posY + nbBlockXdraw < map->maxY)
+		++map->camera.posY;
+	if (map->camera.posY + nbBlockXdraw / 2 > map->character.posY && map->camera.posY > 0)
+		--map->camera.posY;
+}
+
 void updateGame(Inputs *input, Map *map) {
 	map->character.prevPosX = map->character.posX;
 	map->character.prevPosY = map->character.posY;
@@ -665,6 +810,7 @@ void updateGame(Inputs *input, Map *map) {
 		infoGame.isOnMenu = 2;
 	checkCollision(map);
 	checkInteractionPlate(map);
+	changePosCamera(map);
 }
 
 void loadMusic(char *name) {
@@ -720,8 +866,10 @@ void initInfoGame() {
 	infoGame.tileset = loadImage("img/Blocks/all4.png");
 	infoGame.nbTotalMap = 0;
 
-	infoGame.volumeMusic = Mix_VolumeMusic(-1);
-	infoGame.volumeSound = Mix_Volume(-1, -1);
+	loadOption();
+	
+
+	infoGame.joystick = NULL;
 
 	getAllMapsInDirectory();
 	//printAllMapsName();
@@ -1033,26 +1181,26 @@ void updateOption(Inputs *input) {
 			printf("Can't play sound openDoor");
 	}
 	else if (input->right) {
-		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.volumeMusic < MAX_VOLUME) {
-			Mix_VolumeMusic(++infoGame.volumeMusic);
+		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.option->volumeMusic < MAX_VOLUME) {
+			Mix_VolumeMusic(++infoGame.option->volumeMusic);
 			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
-		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.volumeSound < MAX_VOLUME) {
-			Mix_Volume(-1, ++infoGame.volumeSound);
+		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.option->volumeSound < MAX_VOLUME) {
+			Mix_Volume(-1, ++infoGame.option->volumeSound);
 			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
 		
 	}
 	else if (input->left) {
-		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.volumeMusic > MIN_VOLUME) {
-			Mix_VolumeMusic(--infoGame.volumeMusic);
+		if (infoGame.choiceMenu == OPTION_MUSIC && infoGame.option->volumeMusic > MIN_VOLUME) {
+			Mix_VolumeMusic(--infoGame.option->volumeMusic);
 			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
-		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.volumeSound > MIN_VOLUME) {
-			Mix_Volume(-1, --infoGame.volumeSound);
+		else if (infoGame.choiceMenu == OPTION_SOUND && infoGame.option->volumeSound > MIN_VOLUME) {
+			Mix_Volume(-1, --infoGame.option->volumeSound);
 			if (Mix_PlayChannel(-1, sound.menuMove, 0) == -1)
 				printf("Can't play sound openDoor");
 		}
@@ -1066,6 +1214,7 @@ void updateOption(Inputs *input) {
 			infoGame.isOnMenu = IS_IN_PRINCIPAL_MENU;
 			if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)
 				printf("Can't play sound openDoor");
+			saveOption();
 		}
 	}
 }
@@ -1087,7 +1236,7 @@ void drawOption(Map *map) {
 	drawTile(slider, 6 * TILE_SIZE, 3 * TILE_SIZE, 0 * TILE_SIZE, 0);
 	drawTile(slider, 7 * TILE_SIZE, 3 * TILE_SIZE, 1 * TILE_SIZE, 0);
 	drawTile(slider, 8 * TILE_SIZE, 3 * TILE_SIZE, 2 * TILE_SIZE, 0);
-	drawTile(slider, 6 * TILE_SIZE + infoGame.volumeMusic + 27, 3 * TILE_SIZE, 3 * TILE_SIZE, 0);
+	drawTile(slider, 6 * TILE_SIZE + infoGame.option->volumeMusic + 27, 3 * TILE_SIZE, 3 * TILE_SIZE, 0);
 
 	drawTile(infoGame.tileset, 0 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
 	drawTile(infoGame.tileset, 1 * TILE_SIZE, 5 * TILE_SIZE, 0, 0);
@@ -1105,7 +1254,7 @@ void drawOption(Map *map) {
 	drawTile(slider, 6 * TILE_SIZE, 5 * TILE_SIZE, 0 * TILE_SIZE, 0);
 	drawTile(slider, 7 * TILE_SIZE, 5 * TILE_SIZE, 1 * TILE_SIZE, 0);
 	drawTile(slider, 8 * TILE_SIZE, 5 * TILE_SIZE, 2 * TILE_SIZE, 0);
-	drawTile(slider, 6 * TILE_SIZE + infoGame.volumeSound + 27, 5 * TILE_SIZE, 3 * TILE_SIZE, 0);
+	drawTile(slider, 6 * TILE_SIZE + infoGame.option->volumeSound + 27, 5 * TILE_SIZE, 3 * TILE_SIZE, 0);
 
 	drawTile(infoGame.tileset, 0 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
 	drawTile(infoGame.tileset, 1 * TILE_SIZE, 7 * TILE_SIZE, 0, 0);
@@ -1145,11 +1294,72 @@ void drawOption(Map *map) {
 	writeString("Back", 0 * TILE_SIZE + TILE_SIZE / 4, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
 }
 
+void saveOption() {
+	FILE *f;
+
+	f = fopen("config/option", "wb");
+	if (f == NULL) {
+		printf("Error on saving file in configuration\n");
+	}
+	else {
+		fwrite(infoGame.option, sizeof(*infoGame.option), 1, f);
+		fclose(f);
+		printf("vol music ==> %d\n", infoGame.option->volumeMusic);
+		printf("vol sound ==> %d\n", infoGame.option->volumeSound);
+	}
+}
+
+void loadOption() {
+	FILE *f;
+
+	infoGame.option = (s_option *)malloc(sizeof(*infoGame.option));
+	f = fopen("config/option", "rb");
+	if (f != NULL) {
+		fread(infoGame.option, sizeof(*infoGame.option), 1, f);
+		
+		fclose(f);
+	}
+	else {
+		infoGame.option->volumeMusic = 64;
+		infoGame.option->volumeSound = 64;
+		f = fopen("config/option", "wb");
+		if (f == NULL)
+			printf("Error on creating the file of configuration for option\n");
+		else {
+			fwrite(infoGame.option, sizeof(*infoGame.option), 1, f);
+		}
+		fclose(f);
+	}
+	
+}
+
+void delay(unsigned int frameLimit)
+{
+	// Gestion des 60 fps (images/stories/seconde)
+	unsigned int ticks = SDL_GetTicks();
+
+	if (frameLimit < ticks)
+	{
+		return;
+	}
+
+	if (frameLimit > ticks + 16)
+	{
+		SDL_Delay(16);
+	}
+
+	else
+	{
+		SDL_Delay(frameLimit - ticks);
+	}
+}
+
 int	main(int ac, char **av) {
 	Map *map;
 	Map *menu;
 	Map *editor;
 	Inputs input;
+	SDL_TimerID timer;
 
 	initSDL();
 	map = (Map *)malloc(sizeof(*map));
@@ -1163,8 +1373,15 @@ int	main(int ac, char **av) {
 	loadMusic("sound/Caviator.mp3");
 	loadSounds();
 
+	int frameLimit = SDL_GetTicks() + 16;
+	Uint32 fps_lasttime = SDL_GetTicks(); //the last recorded time.
+	Uint32 fps_current; //the current FPS.
+	Uint32 fps_frames = 0; //frames passed since the last recorded fps.
+
+
+
 	while (1)
-	{
+	{		
 		getKey(&input);
 		if (!isOnMenu()) {
 			updateGame(&input, map);
@@ -1175,6 +1392,7 @@ int	main(int ac, char **av) {
 		}
 		else if (isOnMenu() == IS_IN_PRINCIPAL_MENU) {
 			updateMenu(&input, &map);
+
 			if (isOnMenu() != IS_IN_PRINCIPAL_MENU)
 				clearWindow();
 			else
@@ -1206,8 +1424,24 @@ int	main(int ac, char **av) {
 		if (input.enter)
 			infoGame.choiceMenu = 0;
 		SDL_RenderPresent(getRenderer());
-		SDL_Delay(1);
-		resetInputs(&input);
+		
+
+		delay(frameLimit);
+		frameLimit = SDL_GetTicks() + 16;
+
+
+		if (infoGame.joystick == NULL)
+			resetInputs(&input);
+
+	/*	fps_frames++;
+		
+		if (fps_lasttime < SDL_GetTicks() - 1 * 2000)
+		{
+			fps_lasttime = SDL_GetTicks();
+			fps_current = fps_frames;
+			printf("fps ==> %d\n", fps_current);
+			fps_frames = 0; 
+		}*/
 	}
 
 	return 0;

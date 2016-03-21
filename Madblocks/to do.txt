@@ -6,11 +6,11 @@
 
 ==> make simple option (try to control sound) CHECKED
 
-==> add joystick
+==> add joystick CHECKED
 
 ==> 2 players game (need to think if split screen or spelunky like) + (think if one player can play 2 character : switch between them)
 
-==> scroll
+==> scroll CHECKED
 
 ==> can choose the map we want to play in game by checking all maps present in directory maps CHECKED
 
@@ -20,7 +20,7 @@
 
 ==> load an existing file in editor and modify it
 
-==> make a file to register option 
+==> make a file to register option CHECKED
 
 ==> test 2D isométric CHECKED ! Working (need to make a function which convert coord plate to coord windows)
 
