@@ -477,10 +477,32 @@ void loadTeleporter(Map **map, FILE *file) {
 	(*map)->nbTeleporter++;
 }
 
+Map *loadMapBinary(char *pathName) {
+	FILE *f;
+	Map *map;
+
+	f = fopen(pathName, "rb");
+	if (f == NULL) {
+		printf("Error on loading the map\n");
+		map = NULL;
+	}
+	else {
+		map = (Map *)malloc(sizeof(*map));
+		fread(map, sizeof(*map), 1, f);
+		map->character.tileset = loadImage("img/Magician/dm.png");
+		/* TEMPORAIRE !!!!*/
+		if (map->character.posX == 0) {
+			map->character.posX = map->character.posY = 1;
+		}
+		fclose(f);
+	}
+	return map;
+
+}
+
 Map *loadMap(char *nameMap) {
 	FILE *file;
 	Map *map;
-	int test = 42;
 
 	file = fopen(nameMap, "r");
 
@@ -784,6 +806,8 @@ void changePosCamera(Map *map) {
 }
 
 void updateGame(Inputs *input, Map *map) {
+	printf("posplayer ==> %d:%d\n", map->character.posX, map->character.posY);
+
 	map->character.prevPosX = map->character.posX;
 	map->character.prevPosY = map->character.posY;
 	if (input->left) {
@@ -936,7 +960,7 @@ void updatePause(Inputs *input, Map **map) {
 			char *name = (char *)malloc(30);
 			strcpy(name, "maps/");
 			strcat(name, infoGame.allMapsName[infoGame.mapChoosed]);
-			*map = loadMap(name);
+			*map = loadMapBinary(name);
 			free(name);
 			infoGame.isOnMenu = 0;
 		}
@@ -1024,6 +1048,22 @@ void saveMap(char *fileName, Map *editor) {
 	}
 }
 
+void saveMapBinary(char *filename, Map *editor) {
+	FILE *f;
+
+	f = fopen(filename, "wb");
+	if (f == NULL)
+		printf("Error on creating the file to save\n");
+	else {
+		editor->character.posX = 1;
+		editor->character.posY = 1;
+		editor->character.direction = 1;
+		fwrite(editor, sizeof(*editor), 1, f);
+		fclose(f);
+	}
+}
+
+
 int testSave = 0;
 
 void updateEditor(Inputs *input, Map *editor) {
@@ -1037,9 +1077,9 @@ void updateEditor(Inputs *input, Map *editor) {
 		editorPosX--;
 	else if (input->enter) {
 		if (testSave) {
-			strcat(infoGame.pathSave, ".txt");
+			strcat(infoGame.pathSave, ".map");
 			if (!checkFileExist(infoGame.pathSave)) {
-				saveMap(infoGame.pathSave, editor);
+				saveMapBinary(infoGame.pathSave, editor);
 				infoGame.isOnMenu = IS_IN_PRINCIPAL_MENU;
 			}
 			else
@@ -1109,6 +1149,13 @@ int isExtensionTxt(char *name) {
 	return 1;
 }
 
+int isExtensionMap(char *name) {
+	char *ext = strrchr(name, '.');
+	if (ext == NULL || strcmp(ext, ".map") != 0)
+		return 0;
+	return 1;
+}
+
 void printAllMapsName() {
 	for (int i = 0; i < infoGame.nbTotalMap; ++i) {
 		printf("%s\n", infoGame.allMapsName[i]);
@@ -1122,7 +1169,7 @@ void getAllMapsInDirectory() {
 	directoryMap = opendir("maps/");
 	if (directoryMap) {
 		while ((dir = readdir(directoryMap)) != NULL) {
-			if (isExtensionTxt(dir->d_name)) {
+			if (isExtensionMap(dir->d_name)) {
 				infoGame.allMapsName[infoGame.nbTotalMap] = (char *)malloc(30);
 				strcpy(infoGame.allMapsName[infoGame.nbTotalMap], dir->d_name);
 				infoGame.nbTotalMap++;
@@ -1147,7 +1194,7 @@ void updateMenuChooseMap(Inputs *input, Map **map) {
 		char *name = (char *)malloc(30);
 		strcpy(name, "maps/");
 		strcat(name, infoGame.allMapsName[infoGame.choiceMenu]);
-		*map = loadMap(name);
+		*map = loadMapBinary(name);
 		free(name);
 		infoGame.isOnMenu = IS_IN_GAME;
 		if (Mix_PlayChannel(-1, sound.menuChoose, 0) == -1)

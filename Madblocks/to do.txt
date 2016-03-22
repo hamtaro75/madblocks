@@ -33,3 +33,5 @@
 ==> need to write if name already exist to the screen in editor
 
 ==> when choosing name for the map, dissable arrow on the editor and use it for the name. + add delete during name choice.
+
+==> move tileset character to gameinfo
