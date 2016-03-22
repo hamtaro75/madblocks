@@ -110,7 +110,6 @@ typedef struct {
 	int direction;
 	int nbKey;
 	int hasJustEnterTP; // to don't loop on teleporter if it's two way
-	SDL_Texture *tileset;
 } Character;
 
 typedef struct {
@@ -167,6 +166,7 @@ typedef struct {
 	char *pathSave;
 	SDL_Joystick *joystick;
 	s_option *option;
+	SDL_Texture *tilesetCharacter;
 } infosGame;
 
 infosGame infoGame;
@@ -419,11 +419,10 @@ int hasCharacterMoved(Character c) {
 }
 
 void drawCharacter(Map *map) {
-	drawTile(map->character.tileset, map->character.posX * TILE_SIZE - map->camera.posX * TILE_SIZE, map->character.posY * TILE_SIZE - map->camera.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
+	drawTile(infoGame.tilesetCharacter, map->character.posX * TILE_SIZE - map->camera.posX * TILE_SIZE, map->character.posY * TILE_SIZE - map->camera.posY * TILE_SIZE, TILE_SIZE * map->character.direction, 0);
 }
 
 void loadCharacter(Map *map, FILE *file) {
-	map->character.tileset = loadImage("img/Magician/dm.png");
 	map->character.nbKey = 0;
 	fscanf(file, "%d %d %d", &map->character.posX, &map->character.posY, &map->character.direction);
 	map->character.hasJustEnterTP = 0;
@@ -489,7 +488,6 @@ Map *loadMapBinary(char *pathName) {
 	else {
 		map = (Map *)malloc(sizeof(*map));
 		fread(map, sizeof(*map), 1, f);
-		map->character.tileset = loadImage("img/Magician/dm.png");
 		/* TEMPORAIRE !!!!*/
 		if (map->character.posX == 0) {
 			map->character.posX = map->character.posY = 1;
@@ -806,8 +804,6 @@ void changePosCamera(Map *map) {
 }
 
 void updateGame(Inputs *input, Map *map) {
-	printf("posplayer ==> %d:%d\n", map->character.posX, map->character.posY);
-
 	map->character.prevPosX = map->character.posX;
 	map->character.prevPosY = map->character.posY;
 	if (input->left) {
@@ -888,6 +884,7 @@ void initInfoGame() {
 	infoGame.choiceMenu = 0;
 	infoGame.choicePause = 0;
 	infoGame.tileset = loadImage("img/Blocks/all4.png");
+	infoGame.tilesetCharacter = loadImage("img/Magician/dm.png");
 	infoGame.nbTotalMap = 0;
 
 	loadOption();

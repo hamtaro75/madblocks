@@ -34,4 +34,6 @@
 
 ==> when choosing name for the map, dissable arrow on the editor and use it for the name. + add delete during name choice.
 
-==> move tileset character to gameinfo
+==> move tileset character to gameinfo CHECKED
+
+==> need to change map editor when saving, not having the last line to edit
