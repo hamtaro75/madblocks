@@ -4,23 +4,13 @@
 
 ==> animation not move (need timer)
 
-==> make simple option (try to control sound) CHECKED
-
 ==> add joystick CHECKED
 
 ==> 2 players game (need to think if split screen or spelunky like) + (think if one player can play 2 character : switch between them)
 
-==> scroll CHECKED
-
-==> can choose the map we want to play in game by checking all maps present in directory maps CHECKED
-
-==> when save a new map on the editor, can choose the name of the file CHECKED
-
 ==> add menu for editor
 
 ==> load an existing file in editor and modify it
-
-==> make a file to register option CHECKED
 
 ==> test 2D isométric CHECKED ! Working (need to make a function which convert coord plate to coord windows)
 
@@ -34,6 +24,8 @@
 
 ==> when choosing name for the map, dissable arrow on the editor and use it for the name. + add delete during name choice.
 
-==> move tileset character to gameinfo CHECKED
-
 ==> need to change map editor when saving, not having the last line to edit
+
+==> gere resize window
+
+==> gere controls in option
