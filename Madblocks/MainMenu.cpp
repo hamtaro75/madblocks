@@ -1,4 +1,4 @@
-#include "header.h"
+#include "menu.h"
 
 void updateMenu(Inputs *input, Map **map) {
 	if (input->up && getInfoGame()->choiceMenu != MIN_CHOICE_MENU)	{
@@ -37,4 +37,13 @@ void drawMenu(Map *menu) {
 	drawString("Edit map", TILE_SIZE * 4 + TILE_SIZE / 2, 5 * TILE_SIZE + TILE_SIZE / 4, 255, c1, c1, 0);
 	drawString("Option", TILE_SIZE * 4 + TILE_SIZE / 2, 7 * TILE_SIZE + TILE_SIZE / 4, 255, c2, c2, 0);
 	drawString("Exit", TILE_SIZE * 4 + TILE_SIZE / 2, 9 * TILE_SIZE + TILE_SIZE / 4, 255, c3, c3, 0);
+}
+
+void loopMainMenu(Inputs input, Map *map, Map *menu) {
+	updateMenu(&input, &map);
+
+	if (isOnMenu() != IS_IN_PRINCIPAL_MENU)
+		clearWindow();
+	else
+		drawMenu(menu);
 }

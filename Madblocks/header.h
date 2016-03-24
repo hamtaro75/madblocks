@@ -156,71 +156,28 @@ typedef struct {
 	SDL_Texture *menu;
 } infosGame;
 
+#include "Utils.h"
+#include "Map.h"
+#include "Sound.h"
+#include "Draw.h"
 
-infosGame *getInfoGame();
-void getAllMapsInDirectory();
-void initInfoGame();
-int checkFileExist(char *name);
+int isOnMenu();
 
-void inputKeyboard(Inputs *input);
-void resetInputs(Inputs *input);
-void getKey(Inputs *input);
-
+void loopGame(Inputs input, Map *map);
+void loopMainMenu(Inputs input, Map *map, Map *menu);
+void loopPause(Inputs input, Map *map);
+void loopOption(Inputs input, Map *map);
+void loopEditor(Inputs input, Map *editor);
 
 SDL_Renderer *getRenderer();
 SDL_Texture *loadImage(char *path);
 
-Sounds getSound();
-void playSound(Mix_Chunk *s);
-void loadSounds();
-void loadMusic(char *name);
-
-void updateOption(Inputs *input);
-void drawOption(Map *map);
-void saveOption();
-void loadOption();
-SDL_Texture *getSlider();
-
 void initSDL();
-
-void clearWindow();
-void drawTile(SDL_Texture *image, int destx, int desty, int srcx, int srcy);
-void drawString(char *str, int posX, int posY, int red, int green, int blue, int alpha);
 
 void loadCharacter(Map *map, FILE *file);
 void drawCharacter(Map *map);
 
-void showMapConsole(Map map);
-void drawMap(int layer, Map *map);
-void loadMapMid(Map *map, FILE *file);
-void loadMapBack(Map *map, FILE *file);
-Map *loadMap(char *nameMap);
-Map *loadMapBinary(char *pathName);
-
 void loadPressurePlate(Map **map, FILE *file);
 void loadTeleporter(Map **map, FILE *file);
-
-void updateMenu(Inputs *input, Map **map);
-void drawMenu(Map *menu);
-
-void updatePause(Inputs *input, Map **map);
-void drawPause(Map *map);
-
-void loadSquareEditor();
-void updateEditor(Inputs *input, Map *editor);
-void drawEditor(Map *editor);
-
-void updateMenuChooseMap(Inputs *input, Map **map);
-void drawMenuChooseMap(Map *map);
-
-int checkMoveKey(Map *map, int destX, int destY);
-void checkBoxMove(Map *map);
-pressurePlate getPressurePlate(Map *map, int srcX, int srcY);
-s_teleporter getTeleporter(Map *map, int posX, int posY);
-void checkCollision(Map *map);
-void checkInteractionPlate(Map *map);
-void changePosCamera(Map *map);
-void updateGame(Inputs *input, Map *map);
-void drawGame(Map *map);
 
 #endif HEADER

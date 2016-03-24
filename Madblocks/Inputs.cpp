@@ -1,5 +1,4 @@
-#include "header.h"
-
+#include "Inputs.h"
 
 void inputKeyboard(Inputs *input) {
 	SDL_Event event;

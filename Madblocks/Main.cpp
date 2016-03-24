@@ -1,4 +1,7 @@
 #include "header.h"
+#include "Menu.h" // temporary
+#include "Inputs.h" // temporary?
+#include "Editor.h" // Temporary?
 
 int isOnMenu() {
 	return getInfoGame()->isOnMenu;
@@ -77,52 +80,34 @@ int	main(int ac, char **av) {
 	{	
 		getKey(&input);
 	
-		if (!isOnMenu()) {
-			updateGame(&input, map);
-			if (isOnMenu() != IS_IN_GAME)
-				clearWindow();
-			else
-				drawGame(map);
-		}
-		else if (isOnMenu() == IS_IN_PRINCIPAL_MENU) {
-			updateMenu(&input, &map);
-
-			if (isOnMenu() != IS_IN_PRINCIPAL_MENU)
-				clearWindow();
-			else
-				drawMenu(menu);
-		}
+		if (!isOnMenu())
+			loopGame(input, map);
+		else if (isOnMenu() == IS_IN_PRINCIPAL_MENU)
+			loopMainMenu(input, map, menu);
 		else if (isOnMenu() == IS_IN_PAUSE_MENU) {
+		//	loopPause(input, map);
 			updatePause(&input, &map);
 			if (isOnMenu() != IS_IN_PAUSE_MENU)
 				clearWindow();
 			else
 				drawPause(map);
 		}
-		else if (isOnMenu() == IS_IN_OPTION_MENU) {
-			updateOption(&input);
-			drawOption(map);
-		}
+		else if (isOnMenu() == IS_IN_OPTION_MENU)
+			loopOption(input, map);
 		else if (isOnMenu() == IS_IN_CHOOSEMAP_MENU) {
+		//	loopMenuChooseMap(input, map);
 			updateMenuChooseMap(&input, &map);
 			drawMenuChooseMap(map);
 		}
-		else if (isOnMenu() == IS_IN_EDITOR) {
-			updateEditor(&input, editor);
-			if (isOnMenu() != IS_IN_EDITOR)
-				clearWindow();
-			else
-				drawEditor(editor);
-		}
+		else if (isOnMenu() == IS_IN_EDITOR)
+			loopEditor(input, editor);
 
 		if (input.enter)
 			getInfoGame()->choiceMenu = 0;
 		
-
 		delay(frameLimit);
 		frameLimit = SDL_GetTicks() + 16;
 
-		
 		if (getInfoGame()->joystick == NULL)
 			resetInputs(&input);
 			

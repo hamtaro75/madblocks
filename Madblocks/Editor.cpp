@@ -1,4 +1,4 @@
-#include "header.h"
+#include "Editor.h"
 
 SDL_Texture *whiteSquare;
 SDL_Texture *redSquare;
@@ -134,4 +134,12 @@ void drawEditor(Map *editor) {
 void loadSquareEditor() {
 	whiteSquare = loadImage("img/Blocks/white\ square.png");
 	redSquare = loadImage("img/Blocks/red\ square.png");
+}
+
+void loopEditor(Inputs input, Map *editor) {
+	updateEditor(&input, editor);
+	if (isOnMenu() != IS_IN_EDITOR)
+		clearWindow();
+	else
+		drawEditor(editor);
 }

@@ -1,4 +1,4 @@
-#include "header.h"
+#include "Sound.h"
 
 Mix_Music *music;
 Sounds sound;

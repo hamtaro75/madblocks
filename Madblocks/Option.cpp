@@ -1,4 +1,4 @@
-#include "header.h"
+#include "option.h"
 
 void updateOption(Inputs *input) {
 	if (input->up && getInfoGame()->choiceMenu > MIN_CHOICE_OPTION) {
@@ -154,4 +154,9 @@ void loadOption() {
 		fclose(f);
 	}
 	getInfoGame()->option->slider = loadImage("img/Blocks/slider.png");
+}
+
+void loopOption(Inputs input, Map *map) {
+	updateOption(&input);
+	drawOption(map);
 }

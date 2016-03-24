@@ -1,4 +1,4 @@
-#include "header.h"
+#include "menu.h"
 
 void updatePause(Inputs *input, Map **map) {
 	if (input->up && getInfoGame()->choicePause != MIN_CHOICE_PAUSE)	{
@@ -59,4 +59,12 @@ void drawPause(Map *map) {
 	drawString("Continue", TILE_SIZE * 5, TILE_SIZE * 3 + TILE_SIZE / 4, 255, c0, c0, 0);
 	drawString("Restart", TILE_SIZE * 5, TILE_SIZE * 5 + TILE_SIZE / 4, 255, c1, c1, 0);
 	drawString("Quit", TILE_SIZE * 5, TILE_SIZE * 7 + TILE_SIZE / 4, 255, c2, c2, 0);
+}
+
+void loopPause(Inputs input, Map *map) {
+	updatePause(&input, &map);
+	if (isOnMenu() != IS_IN_PAUSE_MENU)
+		clearWindow();
+	else
+		drawPause(map);
 }

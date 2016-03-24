@@ -1,4 +1,4 @@
-#include "header.h"
+#include "Map.h"
 
 void showMapConsole(Map map) {
 	int x = 0;
@@ -94,11 +94,10 @@ Map *loadMap(char *nameMap) {
 	file = fopen(nameMap, "r");
 
 	if (file == NULL) {
-		printf("erreur ouverture fichier\n");
+		printf("Error on opening file map\n");
 		map = NULL;
 	}
 	else {
-		printf("ouverture du fichier\n");
 
 		char buf[20];
 		map = (Map *)malloc(sizeof(Map));
@@ -121,7 +120,6 @@ Map *loadMap(char *nameMap) {
 		} while (strstr(buf, "#end") == NULL);
 		// have to make a function check pressureplate here
 		fclose(file);
-		printf("finish read\n");
 	}
 	return map;
 }

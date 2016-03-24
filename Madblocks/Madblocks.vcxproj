@@ -35,7 +35,16 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Draw.h" />
+    <ClInclude Include="Editor.h" />
+    <ClInclude Include="Game.h" />
     <ClInclude Include="header.h" />
+    <ClInclude Include="Inputs.h" />
+    <ClInclude Include="Map.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="Option.h" />
+    <ClInclude Include="Sound.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BDA33FC1-4342-4504-97BA-6AE7DABEF226}</ProjectGuid>

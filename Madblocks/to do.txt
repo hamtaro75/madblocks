@@ -1,3 +1,4 @@
+
 ==> verify if there's no problem when a block is passing on a open door of a key door
 
 ==> add switch (need timer)
@@ -29,3 +30,5 @@
 ==> gere resize window
 
 ==> gere controls in option
+
+==> put map in global and make a setter on it. Modify all functions that are taking map as parameter

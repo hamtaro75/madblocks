@@ -1,4 +1,4 @@
-#include "header.h"
+#include "menu.h"
 
 void updateMenuChooseMap(Inputs *input, Map **map) {
 	if (input->left && getInfoGame()->choiceMenu != 0)	{

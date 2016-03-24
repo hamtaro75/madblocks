@@ -1,4 +1,4 @@
-#include "header.h"
+#include "Game.h"
 
 // dest = give potential new pos of the key to check if the key can be at the dest pos
 int checkMoveKey(Map *map, int destX, int destY) {
@@ -237,4 +237,12 @@ void drawGame(Map *map) {
 
 	SDL_RenderPresent(getRenderer());
 	SDL_Delay(1);
+}
+
+void loopGame(Inputs input, Map *map) {
+	updateGame(&input, map);
+	if (isOnMenu() != IS_IN_GAME)
+		clearWindow();
+	else
+		drawGame(map);
 }

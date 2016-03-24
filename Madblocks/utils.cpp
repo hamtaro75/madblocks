@@ -1,4 +1,5 @@
-#include "header.h"
+#include "utils.h"
+#include "Option.h"
 
 infosGame *infoGame;
 
@@ -54,7 +55,6 @@ SDL_Texture *loadImage(char *name)
 
 		SDL_FreeSurface(loadedImage);
 		loadedImage = NULL;
-		printf("image loaded !\n");
 	}
 	else
 		printf("L'image n'a pas pu être chargée! SDL_Error :  %s\n", SDL_GetError());
@@ -94,8 +94,6 @@ void initInfoGame() {
 
 	loadSounds();
 	loadMusic("sound/Caviator.mp3");
-
-	printf("aaa ==> %d\n", getInfoGame()->option->volumeMusic);
 
 	infoGame->menu = loadImage("img/menu/test.jpg");
 
